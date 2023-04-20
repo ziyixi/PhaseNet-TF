@@ -1,0 +1,36 @@
+[tool.poetry]
+authors = ["Ziyi Xi <ziyixi@mail.ustc.edu.cn>", "Weiqiang Zhu <wayne.weiqiang@gmail.com>"]
+description = "PhaseNet-TF: Advanced Seismic Arrival Time Detection via Deep Neural Networks in the Spectrogram Domain, Leveraging Cutting-Edge Image Segmentation Approaches"
+license = "MIT"
+name = "phasenet-tf"
+packages = [{include = "phasenet_tf"}]
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+fastapi = "0.86" # fix https://github.com/Lightning-AI/lightning/issues/17106
+h5py = "^3.8.0" 
+hydra-colorlog = "^1.2.0" 
+hydra-core = "^1.3.2" 
+hydra-submitit-launcher = "^1.2.0" 
+lightning = "~2.0" 
+matplotlib = "^3.7.1" 
+numpy = "^1.24.2" 
+pandas = "^2.0.0" 
+pyrootutils = "^1.0.4" 
+python = ">=3.9,<3.12" 
+rich = "^13.3.4" 
+scipy = "^1.10.1" 
+segmentation-models-pytorch = "^0.3.2" 
+torch = "^2.0.0" 
+torchaudio = "^2.0.1" 
+wandb = "^0.14.2" 
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.0.2"
+ipykernel = "^6.22.0"
+pylint = "^2.17.2"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
