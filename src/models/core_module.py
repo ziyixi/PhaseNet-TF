@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from lightning import LightningModule
 
-from src.models.loss import focal_loss
+from src.models.loss.focal_loss import focal_loss
 from src.models.metrics import F1, Precision, Recall
 from src.models.utils.peaks import extract_peaks
 

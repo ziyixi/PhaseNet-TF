@@ -133,6 +133,7 @@ poetry.lock
 
 # dataset
 dataset/
+dataset
 
 # workplace, tests that should not be committed
 workplace/

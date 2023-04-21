@@ -49,4 +49,7 @@ compile: False
 ckpt_path: null
 
 # seed for random number generators in pytorch, numpy and python.random
-seed: null
+seed: 3407
+
+# set to True when using A100 GPUs, https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+float32_matmul_precision_medium: True

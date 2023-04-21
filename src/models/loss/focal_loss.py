@@ -19,9 +19,12 @@ def focal_loss(inputs: torch.Tensor, targets: torch.Tensor, alpha: float = 0.8, 
     # first compute binary cross-entropy
     x = inputs.view(-1)
     y = targets.view(-1)
-    BCE = (y-1)*torch.max(torch.log(1-x), torch.tensor(-100.).type_as(x)) - \
-        y*torch.max(torch.log(x), torch.tensor(-100.).type_as(x))
-    BCE = BCE.mean()*inputs.numel()/len(inputs)  # batch mean
+    BCE = (y-1)*torch.log(1-x+1e-14) - \
+        y*torch.log(x+1e-14)
+    if len(inputs) > 0:
+        BCE = BCE.mean()*inputs.numel()/len(inputs)  # batch mean
+    else:
+        BCE = BCE.mean()*inputs.numel()*0.0
 
     BCE_EXP = torch.exp(-BCE)
     focal_loss = alpha * (1-BCE_EXP)**gamma * BCE
