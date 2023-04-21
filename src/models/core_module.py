@@ -19,6 +19,8 @@ class PhaseNetTFModule(LightningModule):
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
         loss: str = "kl_div",
+        output_classes_weight: List[float] = [
+            0.25, 0.25, 0.25, 0.25],  # with the noise component
         # metrics params
         phases: List[str] = ["P", "S", "PS"],
         extract_peaks_sensitive_possibility: List[float] = [0.5, 0.5, 0.3],
@@ -80,14 +82,23 @@ class PhaseNetTFModule(LightningModule):
         return loss, sgram_power, predict
 
     def compute_loss(self, predict, label) -> torch.Tensor:
+        batch_size, num_channels, nt = predict.size()
+        channel_weights = torch.tensor(
+            self.hparams.output_classes_weight).to(self.device)
+        clamped_label = torch.clamp(label, min=1e-8)
+
         if self.hparams.loss == "kl_div":
-            loss = nn.functional.kl_div(
-                nn.functional.log_softmax(predict, dim=1), torch.clamp(label, min=1e-8), reduction='batchmean',
-            )
+            log_softmax_pred = nn.functional.log_softmax(predict, dim=1)
+            kl_loss = nn.functional.kl_div(
+                log_softmax_pred, clamped_label, reduction='none')
+            kl_loss_weighted = kl_loss * \
+                channel_weights.view(1, num_channels, 1)
+            # batch mean loss
+            loss = kl_loss_weighted.sum() / batch_size
         elif self.hparams.loss == "focal":
-            loss = focal_loss(
-                nn.functional.softmax(predict, dim=1), label,
-            )
+            # note weighting is not implemented for focal loss
+            softmax_pred = nn.functional.softmax(predict, dim=1)
+            loss = focal_loss(softmax_pred, clamped_label)
         return loss
 
     def compute_sgram_power(self, sgram) -> torch.Tensor:

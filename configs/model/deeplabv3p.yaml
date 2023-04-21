@@ -31,6 +31,7 @@ scheduler:
 
 loss: "kl_div"
 phases: ["P", "S", "PS"]
+output_classes_weight: [0.25, 0.25, 0.5, 0.0]
 extract_peaks_sensitive_possibility: [0.5, 0.5, 0.3]
 extract_peaks_sensitive_distances_in_seconds: 5.0
 window_length_in_npts: 4800
