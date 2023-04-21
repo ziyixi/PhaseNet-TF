@@ -30,6 +30,7 @@ wandb = "^0.14.2"
 autopep8 = "^2.0.2"
 ipykernel = "^6.22.0"
 pylint = "^2.17.2"
+joblib = "^1.2.0"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

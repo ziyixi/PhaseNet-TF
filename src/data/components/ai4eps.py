@@ -40,22 +40,21 @@ class Ai4epsDataset(Dataset):
         # waveform.h5 is a hdf5 file containing waveform data
         # eg. f["11_52111"]["A01"][...] is a 3XNT numpy array
         # f["11_52111"]["A01"].attrs is the attributes of the waveform
-        self.h5py_path = data_dir / "waveform.h5"
-        self._handler = None
+        self.h5py_dir = data_dir / "waveform"
+        self._handler = {}
         # index_to_waveform_id is a list of tuples, each tuple is (event_id, station_id)
         # eg. [("11_52111", "A01"), ("11_52111", "A02"), ...]
         self.index_to_waveform_id = index_to_waveform_id
 
-    @property
-    def handler(self) -> h5py.File:
+    def get_handler(self, event_id) -> h5py.File:
         """
         Returns:
             h5py.File: the handler of the hdf5 file
         """
-        if self._handler is None:
-            # lazy load the hdf5 file to avoid pickle error
-            self._handler = h5py.File(self.h5py_path, "r")
-        return self._handler
+        if event_id not in self._handler:
+            self._handler[event_id] = h5py.File(
+                self.h5py_dir / (event_id+".h5"), "r")
+        return self._handler[event_id]
 
     def __len__(self) -> int:
         """ 
@@ -72,9 +71,10 @@ class Ai4epsDataset(Dataset):
             dict: a sample containing waveform data, phase index, phase type, event id, network, station id
         """
         event_id, station_id = self.index_to_waveform_id[idx]
+        handler = self.get_handler(event_id)
         waveform = torch.tensor(
-            self.handler[event_id][station_id][...], dtype=torch.float32)
-        attrs = self.handler[event_id][station_id].attrs
+            handler[event_id][station_id][...], dtype=torch.float32)
+        attrs = handler[event_id][station_id].attrs
 
         sample = {
             "event_id": event_id,

@@ -12,6 +12,6 @@ phases: ["P", "S", "PS"]
 first_arrival_index_in_final_window_if_no_shift: 400
 random_stack_two_waveforms_ratio: 0.7
 # data loader params
-batch_size: 64
+batch_size: 32
 num_workers: 10
 pin_memory: True
