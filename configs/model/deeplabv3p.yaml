@@ -26,14 +26,14 @@ optimizer:
 scheduler:
   _target_: torch.optim.lr_scheduler.MultiStepLR
   _partial_: True
-  milestones: [30, 60, 90, 120]
+  milestones: [15, 30, 45, 60]
   gamma: 0.6
 
 loss: "kl_div"
 phases: ["P", "S", "PS"]
-output_classes_weight: [0.25, 0.25, 0.5, 0.0]
+output_classes_weight: [0.40, 0.10, 0.50, 0.0]
 extract_peaks_sensitive_possibility: [0.5, 0.5, 0.3]
 extract_peaks_sensitive_distances_in_seconds: 5.0
 window_length_in_npts: 4800
 dt_s: 0.025
-metrics_true_positive_threshold_s: 1.0
+metrics_true_positive_threshold_s: 0.5
