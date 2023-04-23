@@ -2,7 +2,7 @@ defaults:
   - default.yaml
 
 accelerator: gpu
-devices: [1, 2, 3]
+devices: [0, 1, 2, 3]
 strategy: "ddp_find_unused_parameters_false"
 
 max_epochs: 200

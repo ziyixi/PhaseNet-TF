@@ -1,4 +1,4 @@
-""" 
+"""
 train.py: this file contains the main training loop.
 """
 from typing import List, Optional, Tuple
@@ -72,8 +72,9 @@ def train(cfg: DictConfig) -> Tuple[dict, dict]:
     logger: List[Logger] = utils.instantiate_loggers(cfg.get("logger"))
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
+    # I really think sanity check is not useful at all
     trainer: Trainer = hydra.utils.instantiate(
-        cfg.trainer, callbacks=callbacks, logger=logger)
+        cfg.trainer, callbacks=callbacks, logger=logger, num_sanity_val_steps=0)
 
     object_dict = {
         "cfg": cfg,
@@ -117,7 +118,7 @@ def train(cfg: DictConfig) -> Tuple[dict, dict]:
     return metric_dict, object_dict
 
 
-@hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
+@ hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
 def main(cfg: DictConfig) -> Optional[float]:
     # apply extra utilities
     # (e.g. ask for tags if none are provided in cfg, print cfg tree, etc.)

@@ -25,6 +25,7 @@ segmentation-models-pytorch = "^0.3.2"
 torch = "^2.0.0" 
 torchaudio = "^2.0.1" 
 wandb = "^0.14.2" 
+obspy = "^1.4.0"
 
 [tool.poetry.group.dev.dependencies]
 autopep8 = "^2.0.2"

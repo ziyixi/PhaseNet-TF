@@ -77,9 +77,7 @@ class Ai4epsDataset(Dataset):
         attrs = handler[event_id][station_id].attrs
 
         sample = {
-            "event_id": event_id,
-            "network": attrs["network"],
-            "station_id": station_id,
+            "key": f"{event_id}_{attrs['network']}.{station_id}",
             "data": waveform,
             "phase_index": attrs["phase_index"].tolist(),
             "phase_type": attrs["phase_type"].tolist(),

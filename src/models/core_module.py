@@ -117,7 +117,7 @@ class PhaseNetTFModule(LightningModule):
         return {
             "loss": loss,
             "sgram_power": sgram_power,
-            "predict": predict,
+            "predict": nn.functional.softmax(predict, dim=1),
             "peaks": peaks,
         }
 
@@ -133,7 +133,7 @@ class PhaseNetTFModule(LightningModule):
         return {
             "val_loss": loss,
             "sgram_power": sgram_power,
-            "predict": predict,
+            "predict": nn.functional.softmax(predict, dim=1),
             "peaks": peaks,
         }
 
@@ -149,7 +149,7 @@ class PhaseNetTFModule(LightningModule):
         return {
             "test_loss": loss,
             "sgram_power": sgram_power,
-            "predict": predict,
+            "predict": nn.functional.softmax(predict, dim=1),
             "peaks": peaks,
         }
 
