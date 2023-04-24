@@ -6,6 +6,6 @@ launcher:
   nodes: 2
   tasks_per_node: 4
   cpus_per_task: 5
-  mem_gb: 150
+  mem_gb: 140
   gres: gpu:v100:4
   account: cmse
