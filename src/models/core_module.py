@@ -31,8 +31,7 @@ class PhaseNetTFModule(LightningModule):
     ):
         super().__init__()
 
-        self.save_hyperparameters(logger=False, ignore=[
-                                  "net", "sgram_generator"])
+        self.save_hyperparameters(logger=False)
 
         self.net = net
         self.sgram_generator = sgram_generator
