@@ -31,4 +31,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository }}/phasenet-tf:latest # Set your desired image name
+          tags: ghcr.io/${{ github.repository_owner }}/phasenet-tf:latest # Set your desired image name
