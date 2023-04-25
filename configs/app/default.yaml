@@ -1,5 +1,5 @@
 # the host address of the application
-host: 127.0.0.1
+host: 0.0.0.0
 
 # the port to run the application on
 port: 8080

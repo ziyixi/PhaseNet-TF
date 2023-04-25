@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # poetry
-poetry.lock
+# poetry.lock
 
 # dataset
 dataset/
@@ -144,3 +144,6 @@ logs/
 # models directory
 models/*
 !models/.gitkeep
+
+# others
+.DS_Store
