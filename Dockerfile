@@ -1,7 +1,7 @@
 # Use the official Python image as the base image
 FROM python:3.9-slim
 LABEL org.opencontainers.image.authors="docker@ziyixi.science"
-LABEL org.opencontainers.image.source=https://github.com/ziyixi/cloudmailin-dida365-app
+LABEL org.opencontainers.image.source=https://github.com/ziyixi/PhaseNet-TF
 LABEL org.opencontainers.image.description="PhaseNet-TF: Advanced Seismic Arrival Time Detection via Deep Neural Networks in the Spectrogram Domain, Leveraging Cutting-Edge Image Segmentation Approaches"
 LABEL org.opencontainers.image.licenses=MIT
 
