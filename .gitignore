@@ -140,3 +140,7 @@ workplace/
 
 # logs
 logs/
+
+# models directory
+models/*
+!models/.gitkeep
