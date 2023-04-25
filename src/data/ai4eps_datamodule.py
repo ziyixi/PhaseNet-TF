@@ -87,7 +87,7 @@ class Ai4epsDataModule(LightningDataModule):
                 self.hparams.window_length_in_npts,
                 self.hparams.phases,
                 self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                self.hparams.random_stack_two_waveforms_ratio
+                0.0
             )
             self.data_test = Ai4epsDataset(
                 Path(self.hparams.data_dir),
@@ -98,7 +98,7 @@ class Ai4epsDataModule(LightningDataModule):
                 self.hparams.window_length_in_npts,
                 self.hparams.phases,
                 self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                self.hparams.random_stack_two_waveforms_ratio
+                0.0
             )
 
     def train_dataloader(self):
