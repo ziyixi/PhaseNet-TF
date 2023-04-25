@@ -24,7 +24,11 @@ ENV PATH="/root/.local/bin:$PATH"
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
     poetry config virtualenvs.create false && \
     poetry config installer.parallel true && \
-    poetry install --no-interaction --no-ansi
+    set -e; \
+    for i in $(seq 1 5); do \
+    poetry install --no-interaction --no-ansi && break || sleep 15; \
+    done
+
 
 # Download the model checkpoint and store it in the 'models' directory
 RUN mkdir -p models && \
