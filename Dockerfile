@@ -1,9 +1,5 @@
 # Use the official Python image as the base image
-FROM python:3.9-slim
-LABEL org.opencontainers.image.authors="docker@ziyixi.science"
-LABEL org.opencontainers.image.source=https://github.com/ziyixi/PhaseNet-TF
-LABEL org.opencontainers.image.description="PhaseNet-TF: Advanced Seismic Arrival Time Detection via Deep Neural Networks in the Spectrogram Domain, Leveraging Cutting-Edge Image Segmentation Approaches"
-LABEL org.opencontainers.image.licenses=MIT
+FROM python:3.9-slim as builder
 
 # Set the working directory
 WORKDIR /app
@@ -24,11 +20,7 @@ ENV PATH="/root/.local/bin:$PATH"
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
     poetry config virtualenvs.create false && \
     poetry config installer.parallel true && \
-    set -e; \
-    for i in $(seq 1 5); do \
-    poetry install --no-interaction --no-ansi && break || sleep 15; \
-    done
-
+    poetry install --no-interaction --no-ansi --with api
 
 # Download the model checkpoint and store it in the 'models' directory
 RUN mkdir -p models && \
@@ -38,6 +30,29 @@ RUN mkdir -p models && \
 COPY src src
 COPY configs configs
 COPY .project-root .project-root
+
+# Use the Alpine-based Python image for the final stage
+FROM python:3.9-slim
+LABEL org.opencontainers.image.authors="docker@ziyixi.science"
+LABEL org.opencontainers.image.source=https://github.com/ziyixi/PhaseNet-TF
+LABEL org.opencontainers.image.description="PhaseNet-TF: Advanced Seismic Arrival Time Detection via Deep Neural Networks in the Spectrogram Domain, Leveraging Cutting-Edge Image Segmentation Approaches"
+LABEL org.opencontainers.image.licenses=MIT
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the necessary files from the builder stage
+COPY --from=builder /app/models /app/models
+COPY --from=builder /app/src /app/src
+COPY --from=builder /app/configs /app/configs
+COPY --from=builder /app/.project-root /app/.project-root
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+
+# Install libgomp1
+RUN apt-get update && \
+    apt-get install -y libgomp1 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the environment variables for host and port
 ENV HOST=127.0.0.1
