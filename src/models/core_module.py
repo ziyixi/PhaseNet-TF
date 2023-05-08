@@ -52,27 +52,24 @@ class PhaseNetTFModule(LightningModule):
         metrics_true_positive_threshold_s_list,
     ) -> nn.ModuleDict:
         metrics_dict = OrderedDict()
-        threshold_list = [
-            int(each / dt_s) for each in metrics_true_positive_threshold_s_list
-        ]
 
         for stage in ["metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
             for iphase, phase in enumerate(phases):
                 metrics_dict[stage][phase] = OrderedDict()
-                for threshold in threshold_list:
-                    metrics_dict[stage][phase][threshold] = OrderedDict()
-                    metrics_dict[stage][phase][threshold]["precision"] = Precision(
-                        iphase, threshold, window_length_in_npts
+                for threshold in metrics_true_positive_threshold_s_list:
+                    metrics_dict[stage][phase][f"{threshold:.2f}"] = OrderedDict()
+                    metrics_dict[stage][phase][f"{threshold:.2f}"]["precision"] = Precision(
+                        iphase, int(threshold/dt_s), window_length_in_npts
                     )
-                    metrics_dict[stage][phase][threshold]["recall"] = Recall(
-                        iphase, threshold, window_length_in_npts
+                    metrics_dict[stage][phase][f"{threshold:.2f}"]["recall"] = Recall(
+                        iphase, int(threshold/dt_s), window_length_in_npts
                     )
-                    metrics_dict[stage][phase][threshold]["f1"] = F1(
-                        iphase, threshold, window_length_in_npts
+                    metrics_dict[stage][phase][f"{threshold:.2f}"]["f1"] = F1(
+                        iphase, int(threshold/dt_s), window_length_in_npts
                     )
 
-                    metrics_dict[stage][phase][threshold] = nn.ModuleDict(
+                    metrics_dict[stage][phase][f"{threshold:.2f}"] = nn.ModuleDict(
                         metrics_dict[stage][phase][threshold]
                     )
 
