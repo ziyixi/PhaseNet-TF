@@ -64,7 +64,8 @@ def main(cfg: DictConfig) -> None:
 
     # save_hyperparameters excludes net and sgram_generator in core_module.py, so we need to pass them in
     model = Model.load_from_checkpoint(
-        cfg.ckpt_path, map_location=torch.device(cfg.get("device", "cpu")))
+        cfg.ckpt_path, map_location=torch.device(cfg.get("device", "cpu"))
+    )
 
     # load other parameters
     dt_s = cfg.model.get("dt_s", 0.025)
@@ -72,7 +73,8 @@ def main(cfg: DictConfig) -> None:
     window_length_in_npts = cfg.model.get("window_length_in_npts", 4800)
     hop_length_in_npts = cfg.app.get("hop_length_in_npts", 2400)
     sensitive_distances_in_seconds = cfg.model.get(
-        "extract_peaks_sensitive_distances_in_seconds", 5.0)
+        "extract_peaks_sensitive_distances_in_seconds", 5.0
+    )
 
     uvicorn.run(app, host=cfg.app.host, port=cfg.app.port)
 
@@ -86,6 +88,7 @@ class PredictionRequest(BaseModel):
         timestamp (List[str]): List of timestamps.
         vec (List[List[List[float]]]): List of 3 X NPTS points.
     """
+
     id: List[str]
     timestamp: List[str]
     vec: List[List[List[float]]]
@@ -104,6 +107,7 @@ class PredictResponse(BaseModel):
         amps (List[Dict[str, List[float]]]): List of amps, the keys of the dict are phases, and the values are the amps of the phases possibility.
         arrival_times (List[Dict[str, List[float]]]): List of arrival times, the keys of the dict are phases, and the values are the arrival times of the phases.
     """
+
     id: List[str]
     possibility: List[Dict[str, List[float]]]
     arrivals: List[Dict[str, List[float]]]
@@ -135,7 +139,7 @@ async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
             window_length_in_npts=window_length_in_npts,
             hop_length_in_npts=hop_length_in_npts,
             dt_s=dt_s,
-            sensitive_distances_in_seconds=sensitive_distances_in_seconds
+            sensitive_distances_in_seconds=sensitive_distances_in_seconds,
         )
 
         # the keys of the dict are arrivals, amps, and possibility
@@ -145,9 +149,13 @@ async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
         pred["arrival_times"] = {}
         for phase in pred["arrivals"]:
             pred["arrival_times"][phase] = [
-                start_time + pd.Timedelta(seconds=arrival*dt_s) for arrival in pred["arrivals"][phase]]
-            pred["arrival_times"][phase] = [arrival.strftime(
-                "%Y-%m-%d %H:%M:%S.%f") for arrival in pred["arrival_times"][phase]]
+                start_time + pd.Timedelta(seconds=arrival * dt_s)
+                for arrival in pred["arrivals"][phase]
+            ]
+            pred["arrival_times"][phase] = [
+                arrival.strftime("%Y-%m-%d %H:%M:%S.%f")
+                for arrival in pred["arrival_times"][phase]
+            ]
 
         # append to res
         res.append(pred)
@@ -158,7 +166,7 @@ async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
         possibility=[pred["possibility"] for pred in res],
         arrivals=[pred["arrivals"] for pred in res],
         amps=[pred["amps"] for pred in res],
-        arrival_times=[pred["arrival_times"] for pred in res]
+        arrival_times=[pred["arrival_times"] for pred in res],
     )
 
     return res

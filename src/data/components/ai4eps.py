@@ -11,12 +11,22 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from src.data.components.utils import (generate_label, normalize_waveform,
-                                       stack_rand)
+from src.data.components.utils import generate_label, normalize_waveform, stack_rand
 
 
 class Ai4epsDataset(Dataset):
-    def __init__(self, data_dir: Path, index_to_waveform_id: List[Tuple[str, str]] = [], transform: Optional[callable] = None, label_shape: str = "gaussian", label_width_in_npts: int = 120, window_length_in_npts: int = 4800, phases: List[str] = ["P", "S", "PS"], first_arrival_index_in_final_window_if_no_shift: int = 400, random_stack_two_waveforms_ratio=0.0):
+    def __init__(
+        self,
+        data_dir: Path,
+        index_to_waveform_id: List[Tuple[str, str]] = [],
+        transform: Optional[callable] = None,
+        label_shape: str = "gaussian",
+        label_width_in_npts: int = 120,
+        window_length_in_npts: int = 4800,
+        phases: List[str] = ["P", "S", "PS"],
+        first_arrival_index_in_final_window_if_no_shift: int = 400,
+        random_stack_two_waveforms_ratio=0.0,
+    ):
         """
         Args:
             data_dir (Path): the directory of the dataset
@@ -34,7 +44,9 @@ class Ai4epsDataset(Dataset):
         self.label_width_in_npts = label_width_in_npts
         self.window_length_in_npts = window_length_in_npts
         self.phases = phases
-        self.first_arrival_index_in_final_window_if_no_shift = first_arrival_index_in_final_window_if_no_shift
+        self.first_arrival_index_in_final_window_if_no_shift = (
+            first_arrival_index_in_final_window_if_no_shift
+        )
         self.random_stack_two_waveforms_ratio = random_stack_two_waveforms_ratio
 
         # waveform.h5 is a hdf5 file containing waveform data
@@ -52,12 +64,11 @@ class Ai4epsDataset(Dataset):
             h5py.File: the handler of the hdf5 file
         """
         if event_id not in self._handler:
-            self._handler[event_id] = h5py.File(
-                self.h5py_dir / (event_id+".h5"), "r")
+            self._handler[event_id] = h5py.File(self.h5py_dir / (event_id + ".h5"), "r")
         return self._handler[event_id]
 
     def __len__(self) -> int:
-        """ 
+        """
         Returns:
             int: the total number of waveforms in the dataset
         """
@@ -67,13 +78,12 @@ class Ai4epsDataset(Dataset):
         """
         Args:
             idx (int): the index of the waveform
-        Returns:    
+        Returns:
             dict: a sample containing waveform data, phase index, phase type, event id, network, station id
         """
         event_id, station_id = self.index_to_waveform_id[idx]
         handler = self.get_handler(event_id)
-        waveform = torch.tensor(
-            handler[event_id][station_id][...], dtype=torch.float32)
+        waveform = torch.tensor(handler[event_id][station_id][...], dtype=torch.float32)
         attrs = handler[event_id][station_id].attrs
 
         sample = {
@@ -83,9 +93,12 @@ class Ai4epsDataset(Dataset):
             "phase_type": attrs["phase_type"].tolist(),
         }
         min_index = min(sample["phase_index"])
-        start_index, end_index = min_index - \
-            self.first_arrival_index_in_final_window_if_no_shift, min_index - \
-            self.first_arrival_index_in_final_window_if_no_shift+self.window_length_in_npts
+        start_index, end_index = (
+            min_index - self.first_arrival_index_in_final_window_if_no_shift,
+            min_index
+            - self.first_arrival_index_in_final_window_if_no_shift
+            + self.window_length_in_npts,
+        )
 
         # used by transforms to indicate the start and end index of the window
         sample["start_index"] = start_index
@@ -95,25 +108,30 @@ class Ai4epsDataset(Dataset):
             sample = self.transform(sample)
 
         # cut sample['data'] to the window length
-        sample['data'] = sample['data'][:, start_index:end_index]
+        sample["data"] = sample["data"][:, start_index:end_index]
         # shift the phase index to the window length
-        sample['phase_index'] = [i-start_index for i in sample['phase_index']]
+        sample["phase_index"] = [i - start_index for i in sample["phase_index"]]
         # generate label, arrivals should be in order as self.phases, if not exist, use -1
         expanded_phase_index = []
         for phase in self.phases:
-            if phase in sample['phase_type']:
+            if phase in sample["phase_type"]:
                 expanded_phase_index.append(
-                    sample['phase_index'][sample['phase_type'].index(phase)])
+                    sample["phase_index"][sample["phase_type"].index(phase)]
+                )
             else:
                 expanded_phase_index.append(-999999999)
-        sample['phase_index'] = expanded_phase_index
-        sample['phase_type'] = self.phases
+        sample["phase_index"] = expanded_phase_index
+        sample["phase_type"] = self.phases
         # convert phase_idnex to tensor, otherwise in dataloader, it will be converted to list with wrong shape
         # eg: using list: 3X8 if batch_size=8, using tensor: 8X3
-        sample['phase_index'] = torch.tensor(sample['phase_index'])
+        sample["phase_index"] = torch.tensor(sample["phase_index"])
 
-        sample['label'] = generate_label(
-            self.label_shape, self.label_width_in_npts, self.window_length_in_npts, sample['phase_index'])
+        sample["label"] = generate_label(
+            self.label_shape,
+            self.label_width_in_npts,
+            self.window_length_in_npts,
+            sample["phase_index"],
+        )
         # normalize the data before possible stacking
         sample = normalize_waveform(sample)
 
@@ -133,18 +151,21 @@ class Ai4epsDataset(Dataset):
             random_idx = torch.randint(0, len(self), (1,)).item()
             random_sample = self.get_item_without_stack(random_idx)
             current_sample = stack_rand(
-                current_sample, random_sample, self.label_width_in_npts)
+                current_sample, random_sample, self.label_width_in_npts
+            )
 
         # normalize the data at the end
         current_sample = normalize_waveform(current_sample)
         # remove unused keys, including start_index, end_index
-        current_sample.pop('start_index', None)
-        current_sample.pop('end_index', None)
+        current_sample.pop("start_index", None)
+        current_sample.pop("end_index", None)
 
         return current_sample
 
 
-def split_train_test_val_for_ai4eps(data_dir: Path, ratio: List[float] = [0.9, 0.05, 0.05], seed: int = 3407) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
+def split_train_test_val_for_ai4eps(
+    data_dir: Path, ratio: List[float] = [0.9, 0.05, 0.05], seed: int = 3407
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
     """
     Split the dataset into train, test and val set
     Args:
@@ -157,11 +178,17 @@ def split_train_test_val_for_ai4eps(data_dir: Path, ratio: List[float] = [0.9, 0
     # csv columns: event_id,station_id,phase_index,phase_time,phase_score,phase_type,phase_polarity
     phase_picks = pd.read_csv(data_dir / "phase_picks.csv")
     # get all distinct (event_id, station_id) pairs
-    unique_event_station_pairs = phase_picks[[
-        "event_id", "station_id"]].drop_duplicates().values
+    unique_event_station_pairs = (
+        phase_picks[["event_id", "station_id"]].drop_duplicates().values
+    )
     # split the pairs into train, test and val, result should be lists of tuples
     rng = np.random.default_rng(seed)
     rng.shuffle(unique_event_station_pairs)
-    train, test, val = np.split(unique_event_station_pairs, [
-                                int(ratio[0]*len(unique_event_station_pairs)), int((ratio[0]+ratio[1])*len(unique_event_station_pairs))])
+    train, test, val = np.split(
+        unique_event_station_pairs,
+        [
+            int(ratio[0] * len(unique_event_station_pairs)),
+            int((ratio[0] + ratio[1]) * len(unique_event_station_pairs)),
+        ],
+    )
     return train.tolist(), test.tolist(), val.tolist()

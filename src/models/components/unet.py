@@ -19,7 +19,11 @@ class RepeatingConv(nn.Module):
         super().__init__()
         self.first_conv = nn.Sequential(
             nn.Conv2d(
-                in_channels=i, out_channels=f, kernel_size=ksize, padding='same', bias=False,
+                in_channels=i,
+                out_channels=f,
+                kernel_size=ksize,
+                padding="same",
+                bias=False,
             ),
             nn.BatchNorm2d(num_features=f),
             nn.ReLU(inplace=True),
@@ -27,13 +31,19 @@ class RepeatingConv(nn.Module):
         # repeating convs
         repeating_convs = []
         for _ in range(r):
-            repeating_convs.extend([
-                nn.Conv2d(
-                    in_channels=f, out_channels=f, kernel_size=ksize, padding='same', bias=False,
-                ),
-                nn.BatchNorm2d(num_features=f),
-                nn.ReLU(inplace=True),
-            ])
+            repeating_convs.extend(
+                [
+                    nn.Conv2d(
+                        in_channels=f,
+                        out_channels=f,
+                        kernel_size=ksize,
+                        padding="same",
+                        bias=False,
+                    ),
+                    nn.BatchNorm2d(num_features=f),
+                    nn.ReLU(inplace=True),
+                ]
+            )
         self.second_conv = nn.Sequential(*repeating_convs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -43,16 +53,22 @@ class RepeatingConv(nn.Module):
 class Down(nn.Module):
     """RepeatingConv => (MaxPool2d , Sequential(h->1))"""
 
-    def __init__(self, i: int, f: int, r: int, h: int, ksize: Tuple[int, int], calculate_skip_for_encoder: bool) -> None:
+    def __init__(
+        self,
+        i: int,
+        f: int,
+        r: int,
+        h: int,
+        ksize: Tuple[int, int],
+        calculate_skip_for_encoder: bool,
+    ) -> None:
         super().__init__()
         # repeating conv
         self.repeating_conv = RepeatingConv(i, f, r, ksize)
         # fc and maxpooling
         if calculate_skip_for_encoder:
             self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-            self.fc = nn.Sequential(
-                nn.Linear(h, 1),
-                nn.ReLU(inplace=True))
+            self.fc = nn.Sequential(nn.Linear(h, 1), nn.ReLU(inplace=True))
         else:
             self.pool = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))
             self.fc = nn.Identity()
@@ -65,15 +81,21 @@ class Down(nn.Module):
 class BottleNeck(nn.Module):
     """RepeatingConv => Sequential(h->1)"""
 
-    def __init__(self, i: int, f: int, r: int, h: int, ksize: Tuple[int, int], calculate_skip_for_encoder) -> None:
+    def __init__(
+        self,
+        i: int,
+        f: int,
+        r: int,
+        h: int,
+        ksize: Tuple[int, int],
+        calculate_skip_for_encoder,
+    ) -> None:
         super().__init__()
         # repeating conv
         self.repeating_conv = RepeatingConv(i, f, r, ksize)
         # fc
         if calculate_skip_for_encoder:
-            self.fc = nn.Sequential(
-                nn.Linear(h, 1),
-                nn.ReLU(inplace=True))
+            self.fc = nn.Sequential(nn.Linear(h, 1), nn.ReLU(inplace=True))
         else:
             self.fc = nn.Identity()
 
@@ -90,7 +112,7 @@ class Up(nn.Module):
             nn.ConvTranspose2d(i, f, kernel_size=(2, 1), stride=(2, 1)),
             nn.ReLU(inplace=True),
         )
-        self.decoder = RepeatingConv(2*f, f, r, ksize)
+        self.decoder = RepeatingConv(2 * f, f, r, ksize)
 
     def forward(self, x: torch.tensor, skip: torch.tensor) -> torch.Tensor:
         x = self.upconv(x)
@@ -100,25 +122,55 @@ class Up(nn.Module):
 
 # * ============== define U-Net model ============== * #
 
+
 class UNet(nn.Module):
-    def __init__(self, features: int = 32, in_cha: int = 6, out_cha: int = 4, first_layer_repeating_cnn: int = 3, n_freq: int = 64, ksize_down: Tuple[int, int] = (5, 5), ksize_up: Tuple[int, int] = (5, 5), encoder_decoder_depth: int = 5, calculate_skip_for_encoder: bool = True):
+    def __init__(
+        self,
+        features: int = 32,
+        in_cha: int = 6,
+        out_cha: int = 4,
+        first_layer_repeating_cnn: int = 3,
+        n_freq: int = 64,
+        ksize_down: Tuple[int, int] = (5, 5),
+        ksize_up: Tuple[int, int] = (5, 5),
+        encoder_decoder_depth: int = 5,
+        calculate_skip_for_encoder: bool = True,
+    ):
         super().__init__()
         # * encoders
         self.encoder_dict = OrderedDict()
-        self.encoder_dict["enc1"] = Down(in_cha, features,
-                                         first_layer_repeating_cnn, n_freq, ksize_down, calculate_skip_for_encoder)
+        self.encoder_dict["enc1"] = Down(
+            in_cha,
+            features,
+            first_layer_repeating_cnn,
+            n_freq,
+            ksize_down,
+            calculate_skip_for_encoder,
+        )
 
         # eg:
         # self.enc2 = Down(features*1, features*2, 1, n_freq//2, ksize_down)
         # self.enc3 = Down(features*2, features*4, 1, n_freq//4, ksize_down)
-        for idx in range(2, encoder_decoder_depth+1):
+        for idx in range(2, encoder_decoder_depth + 1):
             self.encoder_dict[f"enc{idx}"] = Down(
-                features*(2**(idx-2)), features*(2**(idx-1)), 1, n_freq//(2**(idx-1)), ksize_down, calculate_skip_for_encoder)
+                features * (2 ** (idx - 2)),
+                features * (2 ** (idx - 1)),
+                1,
+                n_freq // (2 ** (idx - 1)),
+                ksize_down,
+                calculate_skip_for_encoder,
+            )
         self.encoder = nn.ModuleDict(self.encoder_dict)
 
         # * bottleneck
         self.bottleneck = BottleNeck(
-            features*(2**(encoder_decoder_depth-1)), features*(2**encoder_decoder_depth), 1, n_freq//(2**encoder_decoder_depth), ksize_down, calculate_skip_for_encoder)
+            features * (2 ** (encoder_decoder_depth - 1)),
+            features * (2**encoder_decoder_depth),
+            1,
+            n_freq // (2**encoder_decoder_depth),
+            ksize_down,
+            calculate_skip_for_encoder,
+        )
 
         # * decoders
         # eg:
@@ -128,12 +180,14 @@ class UNet(nn.Module):
         self.decoder_dict = OrderedDict()
         for idx in range(encoder_decoder_depth, 0, -1):
             self.decoder_dict[f"dec{idx}"] = Up(
-                features*(2**idx), features*(2**(idx-1)), 1, ksize_up)
+                features * (2**idx), features * (2 ** (idx - 1)), 1, ksize_up
+            )
         self.decoder = nn.ModuleDict(self.decoder_dict)
 
         # * out
         self.conv_out = nn.Conv2d(
-            in_channels=features, out_channels=out_cha, kernel_size=1)
+            in_channels=features, out_channels=out_cha, kernel_size=1
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # the input is a batch of spectrograms, expected nf=32k, where k is positive

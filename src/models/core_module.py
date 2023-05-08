@@ -20,15 +20,18 @@ class PhaseNetTFModule(LightningModule):
         scheduler: torch.optim.lr_scheduler,
         loss: str = "kl_div",
         output_classes_weight: List[float] = [
-            0.25, 0.25, 0.25, 0.25],  # with the noise component
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+        ],  # with the noise component
         # metrics params
         phases: List[str] = ["P", "S", "PS"],
         extract_peaks_sensitive_possibility: List[float] = [0.5, 0.5, 0.3],
         extract_peaks_sensitive_distances_in_seconds: float = 5.0,
         window_length_in_npts: int = 4800,
         dt_s: float = 0.025,
-        metrics_true_positive_threshold_s_list: List[float] = [
-            0.3, 0.5, 1.0, 1.5, 2.0],
+        metrics_true_positive_threshold_s_list: List[float] = [0.3, 0.5, 1.0, 1.5, 2.0],
     ):
         super().__init__()
 
@@ -41,10 +44,17 @@ class PhaseNetTFModule(LightningModule):
             phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s_list
         )
 
-    def _init_metrics(self, phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s_list) -> nn.ModuleDict:
+    def _init_metrics(
+        self,
+        phases,
+        window_length_in_npts,
+        dt_s,
+        metrics_true_positive_threshold_s_list,
+    ) -> nn.ModuleDict:
         metrics_dict = OrderedDict()
-        threshold_list = [int(each / dt_s)
-                          for each in metrics_true_positive_threshold_s_list]
+        threshold_list = [
+            int(each / dt_s) for each in metrics_true_positive_threshold_s_list
+        ]
 
         for stage in ["metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
@@ -53,17 +63,20 @@ class PhaseNetTFModule(LightningModule):
                 for threshold in threshold_list:
                     metrics_dict[stage][phase][threshold] = OrderedDict()
                     metrics_dict[stage][phase][threshold]["precision"] = Precision(
-                        iphase, threshold, window_length_in_npts)
+                        iphase, threshold, window_length_in_npts
+                    )
                     metrics_dict[stage][phase][threshold]["recall"] = Recall(
-                        iphase, threshold, window_length_in_npts)
+                        iphase, threshold, window_length_in_npts
+                    )
                     metrics_dict[stage][phase][threshold]["f1"] = F1(
-                        iphase, threshold, window_length_in_npts)
+                        iphase, threshold, window_length_in_npts
+                    )
 
                     metrics_dict[stage][phase][threshold] = nn.ModuleDict(
-                        metrics_dict[stage][phase][threshold])
+                        metrics_dict[stage][phase][threshold]
+                    )
 
-                metrics_dict[stage][phase] = nn.ModuleDict(
-                    metrics_dict[stage][phase])
+                metrics_dict[stage][phase] = nn.ModuleDict(metrics_dict[stage][phase])
 
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
 
@@ -72,7 +85,7 @@ class PhaseNetTFModule(LightningModule):
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         sgram = self.sgram_generator(x)
         output = self.net(sgram)
-        predict = output['predict']
+        predict = output["predict"]
         return predict, sgram
 
     def on_train_start(self):
@@ -81,7 +94,9 @@ class PhaseNetTFModule(LightningModule):
                 for key in self.metrics["metrics_val"][phase][threshold]:
                     self.metrics["metrics_val"][phase][threshold][key].reset()
 
-    def model_step(self, batch: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def model_step(
+        self, batch: dict
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         wave, label = batch["data"], batch["label"]
         predict, sgram = self.forward(wave)
         loss = self.compute_loss(predict, label)
@@ -91,16 +106,17 @@ class PhaseNetTFModule(LightningModule):
 
     def compute_loss(self, predict, label) -> torch.Tensor:
         batch_size, num_channels, nt = predict.size()
-        channel_weights = torch.tensor(
-            self.hparams.output_classes_weight).to(self.device)
+        channel_weights = torch.tensor(self.hparams.output_classes_weight).to(
+            self.device
+        )
         clamped_label = torch.clamp(label, min=1e-8)
 
         if self.hparams.loss == "kl_div":
             log_softmax_pred = nn.functional.log_softmax(predict, dim=1)
             kl_loss = nn.functional.kl_div(
-                log_softmax_pred, clamped_label, reduction='none')
-            kl_loss_weighted = kl_loss * \
-                channel_weights.view(1, num_channels, 1)
+                log_softmax_pred, clamped_label, reduction="none"
+            )
+            kl_loss_weighted = kl_loss * channel_weights.view(1, num_channels, 1)
             # batch mean loss
             loss = kl_loss_weighted.sum() / batch_size
         elif self.hparams.loss == "focal":
@@ -112,7 +128,7 @@ class PhaseNetTFModule(LightningModule):
     def compute_sgram_power(self, sgram) -> torch.Tensor:
         real = sgram[:, :3, :, :]
         imag = sgram[:, 3:, :, :]
-        sgram_power = real ** 2 + imag ** 2
+        sgram_power = real**2 + imag**2
         return sgram_power
 
     def training_step(self, batch: dict, batch_idx: int) -> dict:
@@ -120,8 +136,14 @@ class PhaseNetTFModule(LightningModule):
         peaks = self.extract_peaks_from_predict(predict)
 
         log_content = {"loss_train": loss}
-        self.log_dict(log_content,
-                      on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True, prog_bar=True)
+        self.log_dict(
+            log_content,
+            on_step=False,
+            on_epoch=True,
+            batch_size=len(batch["data"]),
+            sync_dist=True,
+            prog_bar=True,
+        )
         return {
             "loss": loss,
             "sgram_power": sgram_power,
@@ -135,8 +157,9 @@ class PhaseNetTFModule(LightningModule):
         predict_arrivals = peaks["arrivals"]
 
         log_content = {"loss_val": loss}
-        self.log_metrics("metrics_val", predict_arrivals,
-                         batch["phase_index"], log_content)
+        self.log_metrics(
+            "metrics_val", predict_arrivals, batch["phase_index"], log_content
+        )
 
         return {
             "val_loss": loss,
@@ -151,8 +174,9 @@ class PhaseNetTFModule(LightningModule):
         predict_arrivals = peaks["arrivals"]
 
         log_content = {"loss_test": loss}
-        self.log_metrics("metrics_test", predict_arrivals,
-                         batch["phase_index"], log_content)
+        self.log_metrics(
+            "metrics_test", predict_arrivals, batch["phase_index"], log_content
+        )
 
         return {
             "test_loss": loss,
@@ -162,13 +186,24 @@ class PhaseNetTFModule(LightningModule):
         }
 
     def extract_peaks_from_predict(self, predict) -> dict:
-        sensitive_heights = {k: v for k, v in zip(
-            self.hparams.phases, self.hparams.extract_peaks_sensitive_possibility)}
+        sensitive_heights = {
+            k: v
+            for k, v in zip(
+                self.hparams.phases, self.hparams.extract_peaks_sensitive_possibility
+            )
+        }
         sensitive_distances = {
-            k: self.hparams.extract_peaks_sensitive_distances_in_seconds for k in self.hparams.phases}
+            k: self.hparams.extract_peaks_sensitive_distances_in_seconds
+            for k in self.hparams.phases
+        }
 
-        peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.hparams.phases, sensitive_heights,
-                              sensitive_distances, int(1.0 / self.hparams.dt_s))
+        peaks = extract_peaks(
+            nn.functional.softmax(predict, dim=1),
+            self.hparams.phases,
+            sensitive_heights,
+            sensitive_distances,
+            int(1.0 / self.hparams.dt_s),
+        )
         return peaks
 
     def log_metrics(self, stage, predict_arrivals, true_arrivals, log_content):
@@ -176,17 +211,28 @@ class PhaseNetTFModule(LightningModule):
             for threshold in self.metrics[stage][phase]:
                 for key in self.metrics[stage][phase][threshold]:
                     self.metrics[stage][phase][threshold][key](
-                        predict_arrivals, true_arrivals)
-                    log_content[f"Metrics/{stage}/{phase}/{threshold}/{key}"] = self.metrics[stage][phase][threshold][key]
-        self.log_dict(log_content, on_step=False,
-                      on_epoch=True, batch_size=len(true_arrivals), sync_dist=True, prog_bar=True)
+                        predict_arrivals, true_arrivals
+                    )
+                    log_content[
+                        f"Metrics/{stage}/{phase}/{threshold}/{key}"
+                    ] = self.metrics[stage][phase][threshold][key]
+        self.log_dict(
+            log_content,
+            on_step=False,
+            on_epoch=True,
+            batch_size=len(true_arrivals),
+            sync_dist=True,
+            prog_bar=True,
+        )
 
     def on_test_epoch_end(self):
         metrics = {}
         for phase in self.metrics["metrics_test"]:
             for threshold in self.metrics["metrics_test"][phase]:
                 for key in self.metrics["metrics_test"][phase][threshold]:
-                    metrics[f"Metrics/{phase}/{threshold}/{key}"] = self.metrics["metrics_test"][phase][threshold][key].compute()
+                    metrics[f"Metrics/{phase}/{threshold}/{key}"] = self.metrics[
+                        "metrics_test"
+                    ][phase][threshold][key].compute()
                     self.metrics["metrics_test"][phase][threshold][key].reset()
 
         if self.global_rank == 0 and hasattr(self.logger.experiment, "config"):
@@ -217,14 +263,14 @@ if __name__ == "__main__":
 
     net = DeepLabV3Plus()
     sgram_generator = GenSgram()
-    optimizer = partial(torch.optim.AdamW, lr=0.001,
-                        weight_decay=1e-3, amsgrad=False)
-    scheduler = partial(torch.optim.lr_scheduler.MultiStepLR,
-                        milestones=[30, 60, 90, 120], gamma=0.6)
+    optimizer = partial(torch.optim.AdamW, lr=0.001, weight_decay=1e-3, amsgrad=False)
+    scheduler = partial(
+        torch.optim.lr_scheduler.MultiStepLR, milestones=[30, 60, 90, 120], gamma=0.6
+    )
 
     module = PhaseNetTFModule(
         net=net,
         sgram_generator=sgram_generator,
         optimizer=optimizer,
-        scheduler=scheduler
+        scheduler=scheduler,
     )

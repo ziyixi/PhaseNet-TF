@@ -7,8 +7,7 @@ from lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from src.data.components.ai4eps import (Ai4epsDataset,
-                                        split_train_test_val_for_ai4eps)
+from src.data.components.ai4eps import Ai4epsDataset, split_train_test_val_for_ai4eps
 from src.data.transforms import RandomReplaceNoise, RandomShift
 from pathlib import Path
 
@@ -30,15 +29,13 @@ class Ai4epsDataModule(LightningDataModule):
         label_shape: str = "gaussian",
         label_width_in_npts: int = 120,
         window_length_in_npts: int = 4800,
-        phases: List[str] = [
-            "P", "S", "PS"],
+        phases: List[str] = ["P", "S", "PS"],
         first_arrival_index_in_final_window_if_no_shift: int = 400,
         random_stack_two_waveforms_ratio=0.0,
         # data loader params
         batch_size: int = 32,
         num_workers: int = 4,
         pin_memory: bool = True,
-
     ):
         super().__init__()
 
@@ -63,8 +60,7 @@ class Ai4epsDataModule(LightningDataModule):
         self.data_train, self.data_val, self.data_test = None, None, None
 
     def setup(self, stage: Optional[str] = None):
-        """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
-        """
+        """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`."""
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
             self.data_train = Ai4epsDataset(
@@ -76,7 +72,7 @@ class Ai4epsDataModule(LightningDataModule):
                 self.hparams.window_length_in_npts,
                 self.hparams.phases,
                 self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                self.hparams.random_stack_two_waveforms_ratio
+                self.hparams.random_stack_two_waveforms_ratio,
             )
             self.data_val = Ai4epsDataset(
                 Path(self.hparams.data_dir),
@@ -87,7 +83,7 @@ class Ai4epsDataModule(LightningDataModule):
                 self.hparams.window_length_in_npts,
                 self.hparams.phases,
                 self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                0.0
+                0.0,
             )
             self.data_test = Ai4epsDataset(
                 Path(self.hparams.data_dir),
@@ -98,7 +94,7 @@ class Ai4epsDataModule(LightningDataModule):
                 self.hparams.window_length_in_npts,
                 self.hparams.phases,
                 self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                0.0
+                0.0,
             )
 
     def train_dataloader(self):

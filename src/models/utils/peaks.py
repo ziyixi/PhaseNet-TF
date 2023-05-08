@@ -5,15 +5,25 @@ import torch
 from scipy.signal import find_peaks
 
 
-def extract_peaks_single_phase(signal: np.ndarray, sensitive_height: float = 0.5, sensitive_distance: float = 0.5, sampling_rate: int = 40) -> Tuple[np.ndarray, np.ndarray]:
-    distance = int(sensitive_distance*sampling_rate)
-    peaks_idx, _ = find_peaks(
-        signal, height=sensitive_height, distance=distance)
+def extract_peaks_single_phase(
+    signal: np.ndarray,
+    sensitive_height: float = 0.5,
+    sensitive_distance: float = 0.5,
+    sampling_rate: int = 40,
+) -> Tuple[np.ndarray, np.ndarray]:
+    distance = int(sensitive_distance * sampling_rate)
+    peaks_idx, _ = find_peaks(signal, height=sensitive_height, distance=distance)
     peaks_amp = signal[peaks_idx]
     return peaks_idx, peaks_amp
 
 
-def extract_peaks(predict_batch: torch.Tensor, phases: List[str], sensitive_heights: Dict[str, float], sensitive_distances: Dict[str, float], sampling_rate: int = 40) -> Dict[str, List[List[List]]]:
+def extract_peaks(
+    predict_batch: torch.Tensor,
+    phases: List[str],
+    sensitive_heights: Dict[str, float],
+    sensitive_distances: Dict[str, float],
+    sampling_rate: int = 40,
+) -> Dict[str, List[List[List]]]:
     """Extract peaks from the predicted batch
 
     Args:
@@ -37,13 +47,16 @@ def extract_peaks(predict_batch: torch.Tensor, phases: List[str], sensitive_heig
         predict_arrival_amps.append([])
         for iphase, phase in enumerate(phases):
             # find peaks
-            peaks_idx, peaks_amp = extract_peaks_single_phase(signal=predict_batch[ibatch][iphase+1].detach().to(dtype=torch.float32).cpu().numpy(),
-                                                              sensitive_height=sensitive_heights[phase],
-                                                              sensitive_distance=sensitive_distances[phase],
-                                                              sampling_rate=sampling_rate)
+            peaks_idx, peaks_amp = extract_peaks_single_phase(
+                signal=predict_batch[ibatch][iphase + 1]
+                .detach()
+                .to(dtype=torch.float32)
+                .cpu()
+                .numpy(),
+                sensitive_height=sensitive_heights[phase],
+                sensitive_distance=sensitive_distances[phase],
+                sampling_rate=sampling_rate,
+            )
             predict_arrivals[-1].append(peaks_idx)
             predict_arrival_amps[-1].append(peaks_amp)
-    return {
-        "arrivals": predict_arrivals,
-        "amps": predict_arrival_amps
-    }
+    return {"arrivals": predict_arrivals, "amps": predict_arrival_amps}

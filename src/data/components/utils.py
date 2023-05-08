@@ -6,7 +6,9 @@ from typing import List
 import torch
 
 
-def generate_label(label_shape: str, label_width: int, wave_length: int, arrivals: List[int] = []) -> torch.Tensor:
+def generate_label(
+    label_shape: str, label_width: int, wave_length: int, arrivals: List[int] = []
+) -> torch.Tensor:
     """
     Args:
         label_shape (str): the shape of the label, can be "gaussian" or "triangle"
@@ -18,15 +20,16 @@ def generate_label(label_shape: str, label_width: int, wave_length: int, arrival
     """
     res = torch.zeros(len(arrivals) + 1, wave_length)
     if label_shape == "gaussian":
-        label_window = torch.exp(-(torch.arange(-label_width //
-                                 2, label_width // 2 + 1)) ** 2 / (2 * (label_width / 6) ** 2))
+        label_window = torch.exp(
+            -((torch.arange(-label_width // 2, label_width // 2 + 1)) ** 2)
+            / (2 * (label_width / 6) ** 2)
+        )
     elif label_shape == "triangle":
-        label_window = 1 - \
-            torch.abs(
-                2 / label_width * (torch.arange(-label_width // 2, label_width // 2 + 1)))
+        label_window = 1 - torch.abs(
+            2 / label_width * (torch.arange(-label_width // 2, label_width // 2 + 1))
+        )
     else:
-        raise Exception(
-            f"label shape {label_shape} is not supported!")
+        raise Exception(f"label shape {label_shape} is not supported!")
 
     for i, idx in enumerate(arrivals):
         # the index for arrival times
@@ -50,9 +53,12 @@ def stack_rand(sample: dict, random_sample: dict, label_width: int) -> dict:
     Returns:
         dict: the stacked sample dict
     """
-    data, random_data = sample['data'], random_sample['data']
-    phase_index, random_phase_index = sample['phase_index'], random_sample['phase_index']
-    label, random_label = sample['label'], random_sample['label']
+    data, random_data = sample["data"], random_sample["data"]
+    phase_index, random_phase_index = (
+        sample["phase_index"],
+        random_sample["phase_index"],
+    )
+    label, random_label = sample["label"], random_sample["label"]
 
     # verify any pair of phase_index and random_phase_index's ditsance is larger than label_width
     for i in phase_index:
@@ -64,31 +70,31 @@ def stack_rand(sample: dict, random_sample: dict, label_width: int) -> dict:
                 return sample
 
     # stack two waveforms and labels
-    stacked_data = data+random_data
-    stacked_label = label+random_label
+    stacked_data = data + random_data
+    stacked_label = label + random_label
 
     # for label, we need to make sure the sum of possibility to be 1
     stacked_label = torch.clamp_max(stacked_label, 1.0)
-    stacked_label[0, :] = 1-torch.sum(stacked_label[1:], 0)
+    stacked_label[0, :] = 1 - torch.sum(stacked_label[1:], 0)
 
-    sample.update({'data': stacked_data, 'label': stacked_label})
+    sample.update({"data": stacked_data, "label": stacked_label})
     return sample
 
 
 def normalize_waveform(sample: dict) -> dict:
     """
-    Args:   
+    Args:
         sample (dict): the sample dict
     Returns:
         dict: the normalized sample dict
     """
-    data = sample['data']
+    data = sample["data"]
     mean_vals = torch.mean(data, axis=1, keepdim=True)
-    data = data-mean_vals
+    data = data - mean_vals
     max_std_val = torch.max(torch.std(data, axis=1))
     if max_std_val == 0:
         max_std_val = torch.ones(1)
-    data = data/max_std_val
+    data = data / max_std_val
 
-    sample.update({'data': data})
+    sample.update({"data": data})
     return sample
