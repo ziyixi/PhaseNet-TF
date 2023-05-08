@@ -27,7 +27,8 @@ class PhaseNetTFModule(LightningModule):
         extract_peaks_sensitive_distances_in_seconds: float = 5.0,
         window_length_in_npts: int = 4800,
         dt_s: float = 0.025,
-        metrics_true_positive_threshold_s: float = 1.0,
+        metrics_true_positive_threshold_s_list: List[float] = [
+            0.3, 0.5, 1.0, 1.5, 2.0],
     ):
         super().__init__()
 
@@ -37,23 +38,30 @@ class PhaseNetTFModule(LightningModule):
         self.sgram_generator = sgram_generator
 
         self.metrics = self._init_metrics(
-            phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s
+            phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s_list
         )
 
-    def _init_metrics(self, phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s) -> nn.ModuleDict:
+    def _init_metrics(self, phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s_list) -> nn.ModuleDict:
         metrics_dict = OrderedDict()
-        threshold = int(metrics_true_positive_threshold_s / dt_s)
+        threshold_list = [int(each / dt_s)
+                          for each in metrics_true_positive_threshold_s_list]
 
         for stage in ["metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
             for iphase, phase in enumerate(phases):
                 metrics_dict[stage][phase] = OrderedDict()
-                metrics_dict[stage][phase]["precision"] = Precision(
-                    iphase, threshold, window_length_in_npts)
-                metrics_dict[stage][phase]["recall"] = Recall(
-                    iphase, threshold, window_length_in_npts)
-                metrics_dict[stage][phase]["f1"] = F1(
-                    iphase, threshold, window_length_in_npts)
+                for threshold in threshold_list:
+                    metrics_dict[stage][phase][threshold] = OrderedDict()
+                    metrics_dict[stage][phase][threshold]["precision"] = Precision(
+                        iphase, threshold, window_length_in_npts)
+                    metrics_dict[stage][phase][threshold]["recall"] = Recall(
+                        iphase, threshold, window_length_in_npts)
+                    metrics_dict[stage][phase][threshold]["f1"] = F1(
+                        iphase, threshold, window_length_in_npts)
+
+                    metrics_dict[stage][phase][threshold] = nn.ModuleDict(
+                        metrics_dict[stage][phase][threshold])
+
                 metrics_dict[stage][phase] = nn.ModuleDict(
                     metrics_dict[stage][phase])
 
@@ -69,8 +77,9 @@ class PhaseNetTFModule(LightningModule):
 
     def on_train_start(self):
         for phase in self.hparams.phases:
-            for key in self.metrics["metrics_val"][phase]:
-                self.metrics["metrics_val"][phase][key].reset()
+            for threshold in self.metrics["metrics_val"][phase]:
+                for key in self.metrics["metrics_val"][phase][threshold]:
+                    self.metrics["metrics_val"][phase][threshold][key].reset()
 
     def model_step(self, batch: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         wave, label = batch["data"], batch["label"]
@@ -164,19 +173,21 @@ class PhaseNetTFModule(LightningModule):
 
     def log_metrics(self, stage, predict_arrivals, true_arrivals, log_content):
         for phase in self.metrics[stage]:
-            for key in self.metrics[stage][phase]:
-                self.metrics[stage][phase][key](
-                    predict_arrivals, true_arrivals)
-                log_content[f"Metrics/{stage}/{phase}/{key}"] = self.metrics[stage][phase][key]
+            for threshold in self.metrics[stage][phase]:
+                for key in self.metrics[stage][phase][threshold]:
+                    self.metrics[stage][phase][threshold][key](
+                        predict_arrivals, true_arrivals)
+                    log_content[f"Metrics/{stage}/{phase}/{threshold}/{key}"] = self.metrics[stage][phase][threshold][key]
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(true_arrivals), sync_dist=True, prog_bar=True)
 
     def on_test_epoch_end(self):
         metrics = {}
         for phase in self.metrics["metrics_test"]:
-            for key in self.metrics["metrics_test"][phase]:
-                metrics[f"Metrics/{phase}/{key}"] = self.metrics["metrics_test"][phase][key].compute()
-                self.metrics["metrics_test"][phase][key].reset()
+            for threshold in self.metrics["metrics_test"][phase]:
+                for key in self.metrics["metrics_test"][phase][threshold]:
+                    metrics[f"Metrics/{phase}/{threshold}/{key}"] = self.metrics["metrics_test"][phase][threshold][key].compute()
+                    self.metrics["metrics_test"][phase][threshold][key].reset()
 
         if self.global_rank == 0 and hasattr(self.logger.experiment, "config"):
             # hasattr in case not using wandb
