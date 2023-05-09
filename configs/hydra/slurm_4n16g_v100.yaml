@@ -3,7 +3,7 @@ defaults:
 
 launcher:
   timeout_min: 239
-  nodes: 2
+  nodes: 4
   tasks_per_node: 4
   cpus_per_task: 5
   mem_gb: 140

@@ -36,4 +36,4 @@ extract_peaks_sensitive_possibility: [0.5, 0.5, 0.3]
 extract_peaks_sensitive_distances_in_seconds: 5.0
 window_length_in_npts: 4800
 dt_s: 0.025
-metrics_true_positive_threshold_s_list: [0.3, 0.5, 1.0, 1.5, 2.0]
+metrics_true_positive_threshold_s_list: [0.5, 1.0, 1.5]
