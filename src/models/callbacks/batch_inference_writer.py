@@ -8,7 +8,7 @@ import numpy as np
 from lightning import LightningModule
 from lightning.pytorch.trainer import Trainer
 from obspy import Stream, Trace, UTCDateTime
-from pytorch_lightning.callbacks import BasePredictionWriter
+from lightning.pytorch.callbacks import BasePredictionWriter
 
 
 class InferenceWriter(BasePredictionWriter):

@@ -28,6 +28,7 @@ hydra-colorlog = "^1.2.0"
 hydra-submitit-launcher = "^1.2.0"
 matplotlib = "^3.7.1"
 obspy = "^1.4.0"
+sqlalchemy = "<2.0"
 wandb = "^0.14.2"
 
 [tool.poetry.group.dev]

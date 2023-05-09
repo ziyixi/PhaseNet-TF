@@ -1,7 +1,6 @@
 """ 
 batch_inference_step.py: Lightning callback to run predict_step when doing batch inference.
 """
-import lightning.pytorch as pl
 import torch
 from lightning import LightningModule
 from lightning.pytorch.callbacks import Callback

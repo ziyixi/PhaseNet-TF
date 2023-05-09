@@ -147,3 +147,6 @@ models/*
 
 # others
 .DS_Store
+
+# batch inference requirements
+batch_inference/

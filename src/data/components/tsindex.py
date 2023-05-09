@@ -55,10 +55,10 @@ class TSIndexDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict:
         # load client here but not init to avoid multiprocessing issues
-        client = Client(database=self.tsindex_database_path)
+        client = Client(database=str(self.tsindex_database_path))
 
-        net, sta, start, end = self.all_splits[idx]
-        st = self.client.get_waveforms(net, sta, "*", "*", start, end)
+        net, sta, start, end = self.all_inference_windows[idx]
+        st = client.get_waveforms(net, sta, "*", "*", start, end)
 
         if len(st) != 3:
             error_log_file = self.inference_output_dir / "error.log"

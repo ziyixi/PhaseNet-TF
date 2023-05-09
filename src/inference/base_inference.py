@@ -31,14 +31,21 @@ class PadZeroTransform:
         _, npts = x.shape
         if npts < self.window_length_in_npts:
             x = torch.cat(
-                (x, torch.zeros((3, self.window_length_in_npts - npts))), dim=1
+                (
+                    x,
+                    torch.zeros(
+                        (3, self.window_length_in_npts - npts), device=x.device
+                    ),
+                ),
+                dim=1,
             )
         if npts % self.hop_length_in_npts != 0:
             x = torch.cat(
                 (
                     x,
                     torch.zeros(
-                        (3, self.hop_length_in_npts - npts % self.hop_length_in_npts)
+                        (3, self.hop_length_in_npts - npts % self.hop_length_in_npts),
+                        device=x.device,
                     ),
                 ),
                 dim=1,
@@ -164,7 +171,7 @@ class BatchToWaveformTransform:
             + self.window_length_in_npts
             - self.hop_length_in_npts
         )
-        res = torch.zeros((channel, npts))
+        res = torch.zeros((channel, npts), device=x.device)
         for i in range(number_of_windows):
             # for the overlap part, we take the max of the two/three/... windows
             res[

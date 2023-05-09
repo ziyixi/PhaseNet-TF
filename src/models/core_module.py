@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
@@ -58,16 +58,16 @@ class PhaseNetTFModule(LightningModule):
             for iphase, phase in enumerate(phases):
                 metrics_dict[stage][phase] = OrderedDict()
                 for threshold in metrics_true_positive_threshold_s_list:
-                    threshold_key_name=f"{threshold:.2f}".replace(".", "_")
+                    threshold_key_name = f"{threshold:.2f}".replace(".", "_")
                     metrics_dict[stage][phase][threshold_key_name] = OrderedDict()
-                    metrics_dict[stage][phase][threshold_key_name]["precision"] = Precision(
-                        iphase, int(threshold/dt_s), window_length_in_npts
-                    )
+                    metrics_dict[stage][phase][threshold_key_name][
+                        "precision"
+                    ] = Precision(iphase, int(threshold / dt_s), window_length_in_npts)
                     metrics_dict[stage][phase][threshold_key_name]["recall"] = Recall(
-                        iphase, int(threshold/dt_s), window_length_in_npts
+                        iphase, int(threshold / dt_s), window_length_in_npts
                     )
                     metrics_dict[stage][phase][threshold_key_name]["f1"] = F1(
-                        iphase, int(threshold/dt_s), window_length_in_npts
+                        iphase, int(threshold / dt_s), window_length_in_npts
                     )
 
                     metrics_dict[stage][phase][threshold_key_name] = nn.ModuleDict(
@@ -182,6 +182,10 @@ class PhaseNetTFModule(LightningModule):
             "predict": nn.functional.softmax(predict, dim=1),
             "peaks": peaks,
         }
+
+    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
+        # we have to place this placeholder, otherwise pytorch lightning will use forward
+        pass
 
     def extract_peaks_from_predict(self, predict) -> dict:
         sensitive_heights = {

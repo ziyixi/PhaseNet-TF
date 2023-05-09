@@ -94,7 +94,9 @@ def single_inference(
 
     # only keep the phases we want in extract_phases, also remove the unnecessary batch axis in peaks
     arrivals, amps = {}, {}
-    output_keep_only_extract_phases = {"noise": output[0][0].numpy().tolist()}
+    output_keep_only_extract_phases = {
+        "noise": output[0][0].detach().cpu().numpy().tolist()
+    }
     for iphase, phase in enumerate(model_phases):
         if phase in extract_phases:
             arrivals[phase] = peaks["arrivals"][0][iphase].tolist()

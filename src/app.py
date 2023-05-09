@@ -62,7 +62,6 @@ def main(cfg: DictConfig) -> None:
     log.info(f"Instantiating model <{cfg.model._target_}>")
     Model = hydra.utils.get_class(cfg.model._target_)
 
-    # save_hyperparameters excludes net and sgram_generator in core_module.py, so we need to pass them in
     model = Model.load_from_checkpoint(
         cfg.ckpt_path, map_location=torch.device(cfg.get("device", "cpu"))
     )
