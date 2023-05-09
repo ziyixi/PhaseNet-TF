@@ -100,7 +100,7 @@ def single_inference(
             arrivals[phase] = peaks["arrivals"][0][iphase].tolist()
             amps[phase] = peaks["amps"][0][iphase].tolist()
             output_keep_only_extract_phases[phase] = (
-                output[0][iphase + 1].numpy().tolist()
+                output[0][iphase + 1].detach().cpu().numpy().tolist()
             )
 
     return {
