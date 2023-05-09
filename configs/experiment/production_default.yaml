@@ -20,7 +20,7 @@ callbacks:
     if_log_train: true
     if_log_val: true
     if_log_test: true
-    log_every_n_epoch: 10
+    log_every_n_epoch: 20
 
 logger:
   wandb:
