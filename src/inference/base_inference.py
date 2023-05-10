@@ -102,6 +102,24 @@ class SlidingWindowNormalizeTransform:
         return x
 
 
+class BatchNormalizeTransform:
+    def __init__(self) -> None:
+        pass
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        batch_size = x.shape[0]
+        for i in range(batch_size):
+            data = x[i]
+            mean_vals = torch.mean(data, axis=1, keepdim=True)
+            data = data - mean_vals
+            max_std_val = torch.max(torch.std(data, axis=1))
+            if max_std_val == 0:
+                max_std_val = torch.ones(1)
+            data = data / max_std_val
+            x[i] = data
+        return x
+
+
 class WaveformToBatchTransform:
     def __init__(self, window_length_in_npts: int, hop_length_in_npts: int):
         """

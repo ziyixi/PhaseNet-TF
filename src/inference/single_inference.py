@@ -11,7 +11,7 @@ from src.models.utils.peaks import extract_peaks
 from .base_inference import (
     BatchToWaveformTransform,
     PadZeroTransform,
-    SlidingWindowNormalizeTransform,
+    BatchNormalizeTransform,
     WaveformToBatchTransform,
 )
 
@@ -44,20 +44,22 @@ def single_inference(
     """
     # initiliaze the transforms
     pad_zero_transform = PadZeroTransform(window_length_in_npts, hop_length_in_npts)
-    sliding_window_normalize_transform = SlidingWindowNormalizeTransform(
-        window_length_in_npts, hop_length_in_npts
-    )
+    # sliding_window_normalize_transform = SlidingWindowNormalizeTransform(
+    #     window_length_in_npts, hop_length_in_npts
+    # )
     waveform_to_batch_transform = WaveformToBatchTransform(
         window_length_in_npts, hop_length_in_npts
     )
+    batch_normalize_transform = BatchNormalizeTransform()
     batch_to_waveform_transform = BatchToWaveformTransform(
         window_length_in_npts, hop_length_in_npts
     )
 
     # prepare the input tensor
     data = pad_zero_transform(data)
-    data = sliding_window_normalize_transform(data)
+    # data = sliding_window_normalize_transform(data)
     data = waveform_to_batch_transform(data)
+    data = batch_normalize_transform(data)
 
     # do the inference, assume model is already in eval mode
     with torch.no_grad():
