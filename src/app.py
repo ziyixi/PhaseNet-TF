@@ -129,6 +129,7 @@ async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
     res = []
     for itrace in range(number_of_traces):
         # run inference
+        model.eval()
         pred = single_inference(
             model=model,
             data=torch.tensor(request.vec[itrace], dtype=torch.float32),
