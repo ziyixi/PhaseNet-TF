@@ -75,6 +75,7 @@ def main(cfg: DictConfig) -> None:
 
     # do inference
     log.info("Starting inference...")
+    model.eval()
     trainer.predict(model, datamodule=datamodule)
 
 

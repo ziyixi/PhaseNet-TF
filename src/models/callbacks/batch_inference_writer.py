@@ -53,8 +53,10 @@ class InferenceWriter(BasePredictionWriter):
 
         # * save to phase_arrivals.csv
         if self.save_phase_arrivals:
-            phase_save_path = self.output_dir / "phase_arrivals.csv"
-            if trainer.global_rank == 0 and (not phase_save_path.is_file()):
+            phase_save_path = (
+                self.output_dir / f"phase_arrivals_{trainer.global_rank}.csv"
+            )
+            if not phase_save_path.is_file():
                 with phase_save_path.open("w") as f:
                     f.write("net,sta,win_start,win_end,phase,point,time,amp\n")
 

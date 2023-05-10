@@ -2,7 +2,7 @@
 
 # dev config for inference, all files are stored in local directory
 defaults:
-  - override /trainer: single_gpu.yaml
+  - override /trainer: default.yaml
   - override /logger: csv.yaml
 
 data:
@@ -17,8 +17,8 @@ callbacks:
     save_waveform_stream: True
     save_phase_arrivals: True
 
-trainer:
-  devices: [1]
-  max_epochs: 1
+# trainer:
+#   devices: [0]
+#   max_epochs: 1
 
 ckpt_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-TF/models/model.ckpt

@@ -7,21 +7,19 @@ defaults:
   - override /hydra: inference_1n4g_a100.yaml
 
 data:
-  inference_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-TF/batch_inference/train_benchmark.csv
-  inference_output_dir: /mnt/scratch/xiziyi/inference/new_20230509/train_bench_0_1
+  inference_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-TF/batch_inference/one_month_bench.csv
+  inference_output_dir: /mnt/scratch/xiziyi/inference/new_20230509/one_month_bench_0_5
   tsindex_database_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-TF/batch_inference/dataset_continious/tongaml_continious_response_removed.sqlite
 
 callbacks:
   batch_inference_writer:
-    output_dir: /mnt/scratch/xiziyi/inference/new_20230509/train_bench_0_1
-    save_prediction_stream: True
-    save_waveform_stream: True
+    output_dir: /mnt/scratch/xiziyi/inference/new_20230509/one_month_bench_0_5
+    save_prediction_stream: False
+    save_waveform_stream: False
     save_phase_arrivals: True
-  batch_inference_step:
-    extract_phase_sensitivity: [0.1, 0.1]
 
 trainer:
-  devices: 4
+  devices: [0, 1, 2, 3]
   max_epochs: 1
 
 ckpt_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-TF/models/model.ckpt

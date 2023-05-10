@@ -40,7 +40,6 @@ class BatchInferenceStepCallback(Callback):
             return
         # update batch dict with output from single inference
         with torch.no_grad():
-            pl_module.eval()
             data = batch["data"][0]
             inference_result = single_inference(
                 model=pl_module,

@@ -164,7 +164,10 @@ class Ai4epsDataset(Dataset):
 
 
 def split_train_test_val_for_ai4eps(
-    data_dir: Path, ratio: List[float] = [0.9, 0.05, 0.05], seed: int = 3407, split_based_on: str = "S"
+    data_dir: Path,
+    ratio: List[float] = [0.9, 0.05, 0.05],
+    seed: int = 3407,
+    split_based_on: str = "S",
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
     """
     Split the dataset into train, test, and val set
@@ -176,7 +179,10 @@ def split_train_test_val_for_ai4eps(
     Returns:
         Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]: train, test, and val set
     """
-    def extract_unique_pairs(phase_picks: pd.DataFrame, split_based_on: str) -> Tuple[set, set]:
+
+    def extract_unique_pairs(
+        phase_picks: pd.DataFrame, split_based_on: str
+    ) -> Tuple[set, set]:
         unique_pairs_set = set()
         unique_pairs_set_other = set()
 
@@ -191,26 +197,37 @@ def split_train_test_val_for_ai4eps(
 
         return unique_pairs_set, unique_pairs_set_other
 
-
-    def split_pairs(unique_pairs: Tuple[set, set], ratio: List[float], seed: int) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
+    def split_pairs(
+        unique_pairs: Tuple[set, set], ratio: List[float], seed: int
+    ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
         unique_pairs_set, unique_pairs_set_other = unique_pairs
         rng = np.random.default_rng(seed)
 
-        def split_and_combine(pairs: set) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
+        def split_and_combine(
+            pairs: set,
+        ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
             rng.shuffle(pairs)
             train_size = int(len(pairs) * ratio[0])
             train_test_size = int(len(pairs) * (ratio[0] + ratio[1]))
-            return pairs[:train_size], pairs[train_size:train_test_size], pairs[train_test_size:]
+            return (
+                pairs[:train_size],
+                pairs[train_size:train_test_size],
+                pairs[train_test_size:],
+            )
 
         train_pairs, test_pairs, val_pairs = split_and_combine(list(unique_pairs_set))
-        train_pairs_other, test_pairs_other, val_pairs_other = split_and_combine(list(unique_pairs_set_other))
+        train_pairs_other, test_pairs_other, val_pairs_other = split_and_combine(
+            list(unique_pairs_set_other)
+        )
 
-        return train_pairs + train_pairs_other, test_pairs + test_pairs_other, val_pairs + val_pairs_other
+        return (
+            train_pairs + train_pairs_other,
+            test_pairs + test_pairs_other,
+            val_pairs + val_pairs_other,
+        )
 
     phase_picks = pd.read_csv(data_dir / "phase_picks.csv")
     unique_pairs = extract_unique_pairs(phase_picks, split_based_on)
     train_pairs, test_pairs, val_pairs = split_pairs(unique_pairs, ratio, seed)
 
     return train_pairs, test_pairs, val_pairs
-
-

@@ -58,18 +58,31 @@ class TSIndexDataset(Dataset):
         client = Client(database=str(self.tsindex_database_path))
 
         net, sta, start, end = self.all_inference_windows[idx]
-        st = client.get_waveforms(net, sta, "*", "*", start, end)
-
-        if len(st) != 3:
+        try:
+            st = client.get_waveforms(net, sta, "*", "*", start, end)
+        except Exception as e:
             error_log_file = self.inference_output_dir / "error.log"
             if not error_log_file.exists():
                 error_log_file.touch()
                 # write the header
                 with open(error_log_file, "w") as f:
-                    f.write("net,sta,start,end,stream_len\n")
+                    f.write("net,sta,start,end,stream_len,error_info\n")
             with open(error_log_file, "a") as f:
-                f.write(f"{net},{sta},{start},{end},{len(st)}\n")
+                f.write(f"{net},{sta},{start},{end},,{str(e)}\n")
             return {}
+
+        if len(st) != 3:
+            st.merge()
+            if len(st) != 3:
+                error_log_file = self.inference_output_dir / "error.log"
+                if not error_log_file.exists():
+                    error_log_file.touch()
+                    # write the header
+                    with open(error_log_file, "w") as f:
+                        f.write("net,sta,start,end,stream_len,error_info\n")
+                with open(error_log_file, "a") as f:
+                    f.write(f"{net},{sta},{start},{end},{len(st)},\n")
+                return {}
 
         # convert to tensor
         res = self.stream_to_tensor_transform(st)
