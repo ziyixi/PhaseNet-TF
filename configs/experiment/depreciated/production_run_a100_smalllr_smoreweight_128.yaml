@@ -34,7 +34,7 @@ model:
   optimizer:
     lr: 0.0004
   output_classes_weight: [0.20, 0.20, 0.60, 0.0]
-  sgram_generator:
+  sgram_generator_config:
     height: 128
   net:
     image_height: 128

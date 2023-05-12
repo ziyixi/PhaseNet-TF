@@ -5,8 +5,7 @@ net:
   out_channels: 4
   image_height: 64
 
-sgram_generator:
-  _target_: src.models.spectrogram.GenSgram
+sgram_generator_config:
   n_fft: 256
   hop_length: 4
   freqmin: 0

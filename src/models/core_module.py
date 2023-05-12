@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -7,6 +7,7 @@ from lightning import LightningModule
 
 from src.models.loss.focal_loss import focal_loss
 from src.models.metrics import F1, Precision, Recall
+from src.models.spectrogram import GenSgram
 from src.models.utils.peaks import extract_peaks
 
 
@@ -15,7 +16,6 @@ class PhaseNetTFModule(LightningModule):
         self,
         # model params
         net: nn.Module,
-        sgram_generator: nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
         loss: str = "kl_div",
@@ -25,6 +25,16 @@ class PhaseNetTFModule(LightningModule):
             0.25,
             0.25,
         ],  # with the noise component
+        sgram_generator_config: dict[str,Union[int,float]] = {
+            "n_fft": 256,
+            "hop_length": 1,
+            "freqmin": 0,
+            "freqmax": 10,
+            "dt_s": 0.025,
+            "height": 64,
+            "width": 4800,
+            "max_clamp": 3000,
+        },
         # metrics params
         phases: List[str] = ["P", "S", "PS"],
         extract_peaks_sensitive_possibility: List[float] = [0.5, 0.5, 0.3],
@@ -38,7 +48,7 @@ class PhaseNetTFModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         self.net = net
-        self.sgram_generator = sgram_generator
+        self.sgram_generator = GenSgram(**sgram_generator_config)
 
         self.metrics = self._init_metrics(
             phases, window_length_in_npts, dt_s, metrics_true_positive_threshold_s_list
@@ -259,9 +269,10 @@ class PhaseNetTFModule(LightningModule):
 
 if __name__ == "__main__":
     # test code
+    from functools import partial
+
     from src.models.components.deeplabv3p import DeepLabV3Plus
     from src.models.spectrogram import GenSgram
-    from functools import partial
 
     net = DeepLabV3Plus()
     sgram_generator = GenSgram()

@@ -47,6 +47,8 @@ optional = true
 fastapi = "0.86" # fix https://github.com/Lightning-AI/lightning/issues/17106 
 pydantic = "^1.10.7" 
 uvicorn = "^0.21.1" 
+onnx = "^1.14.0"
+onnxruntime = "^1.14.1"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

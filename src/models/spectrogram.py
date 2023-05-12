@@ -1,9 +1,10 @@
 import torch
 import torchvision.transforms.functional as F
 from nnAudio import features
+from torch import nn
 
 
-class GenSgram(features.STFT):
+class GenSgram(nn.Module):
     """
     Generate spectrogram from waveform
     """
@@ -30,8 +31,9 @@ class GenSgram(features.STFT):
             width: the width of the spectrogram (number of points in time axis), default is 4800
             max_clamp: the maximum value to be shown in the spectrogram, default is 3000
         """
+        super().__init__()
         # since Spectrogram has no params, we don't need to set it as no_grad
-        super().__init__(
+        self.spec_layer=features.STFT(
             n_fft=n_fft,
             hop_length=hop_length,
             output_format="Complex",
@@ -53,7 +55,9 @@ class GenSgram(features.STFT):
         Returns:
             sgram: a tensor of shape (batch, channel, freq, time)
         """
-        sgram: torch.Tensor = super().__call__(waveform)
+        # sgram: torch.Tensor = super().__call__(waveform)
+        sgrams = [self.spec_layer(waveform[:, i, :]) for i in range(waveform.shape[1])]
+        sgram = torch.stack(sgrams, dim=1)
         # sgram: torch.Tensor = self.func(data)
         # we should cut the frequency between freqmin to freqmax
         # the time bin length is nt//hop_length+1, we assume the mod is nt%hop_length==0
@@ -64,8 +68,8 @@ class GenSgram(features.STFT):
 
         # first 3 channel as real, last 3 as imag
         real = sgram[..., 0]
-        imag = sgram.imag[..., 1]
-        p = sgram.abs() ** 2 + 0.001
+        imag = sgram[..., 1]
+        p = real**2 + imag**2 + 0.001
         ratio = torch.clamp_max(p, self.max_clamp) / p
         # ! note, this can only be done with batch dimension
         sgram = torch.cat([real * ratio, imag * ratio], dim=1)
