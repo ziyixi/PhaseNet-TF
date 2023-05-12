@@ -114,7 +114,7 @@ class BatchNormalizeTransform:
             data = data - mean_vals
             max_std_val = torch.max(torch.std(data, axis=1))
             if max_std_val == 0:
-                max_std_val = torch.ones(1)
+                max_std_val = torch.ones(1, device=x.device)
             data = data / max_std_val
             x[i] = data
         return x
