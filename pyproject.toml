@@ -17,7 +17,7 @@ rich = "^13.3.4"
 scipy = "^1.10.1"
 segmentation-models-pytorch = "^0.3.2"
 torch = "^2.0.0"
-torchaudio = "^2.0.1"
+nnAudio = "^0.3.2"
 
 [tool.poetry.group.train]
 optional = true

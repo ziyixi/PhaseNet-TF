@@ -1,9 +1,9 @@
 import torch
 import torchvision.transforms.functional as F
-from torchaudio.transforms import Spectrogram
+from nnAudio import features
 
 
-class GenSgram(Spectrogram):
+class GenSgram(features.STFT):
     """
     Generate spectrogram from waveform
     """
@@ -32,7 +32,11 @@ class GenSgram(Spectrogram):
         """
         # since Spectrogram has no params, we don't need to set it as no_grad
         super().__init__(
-            n_fft=n_fft, hop_length=hop_length, power=None, window_fn=torch.hann_window
+            n_fft=n_fft,
+            hop_length=hop_length,
+            output_format="Complex",
+            window="hann",
+            verbose=False,
         )
         self.n_fft = n_fft
         self.freqmin = freqmin
@@ -56,11 +60,11 @@ class GenSgram(Spectrogram):
         df = (self.sampling_rate / 2) / (self.n_fft // 2)
         freqmin_pos = round(self.freqmin / df)
         freqmax_pos = round(self.freqmax / df)
-        sgram = sgram[..., freqmin_pos : freqmax_pos + 1, :-1]
+        sgram = sgram[..., freqmin_pos : freqmax_pos + 1, :-1, :]
 
         # first 3 channel as real, last 3 as imag
-        real = sgram.real
-        imag = sgram.imag
+        real = sgram[..., 0]
+        imag = sgram.imag[..., 1]
         p = sgram.abs() ** 2 + 0.001
         ratio = torch.clamp_max(p, self.max_clamp) / p
         # ! note, this can only be done with batch dimension
