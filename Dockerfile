@@ -24,7 +24,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 
 # Download the model checkpoint and store it in the 'models' directory
 RUN mkdir -p models && \
-    axel -n 10 -o models/model.ckpt https://github.com/ziyixi/PhaseNet-TF/releases/download/v0.2.0/model.ckpt
+    axel -n 10 -o models/model.ckpt https://github.com/ziyixi/PhaseNet-TF/releases/download/v0.3.0/model.ckpt
 
 # Copy the 'src' directory into the container
 COPY src src
