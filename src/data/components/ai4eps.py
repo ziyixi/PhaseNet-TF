@@ -227,6 +227,8 @@ def split_train_test_val_for_ai4eps(
         )
 
     phase_picks = pd.read_csv(data_dir / "phase_picks.csv")
+    # event_id column to str type
+    phase_picks["event_id"] = phase_picks["event_id"].astype("str")
     unique_pairs = extract_unique_pairs(phase_picks, split_based_on)
     train_pairs, test_pairs, val_pairs = split_pairs(unique_pairs, ratio, seed)
 

@@ -18,12 +18,14 @@ class TSIndexDataset(Dataset):
         inference_requirement_path: Path,
         inference_output_dir: Path,
         tsindex_database_path: Path,
+        datapath_name_replace: Optional[list]=None,
         continuous_window_time_in_sec: float = 3600,
         transform: Optional[callable] = None,
     ) -> None:
         super().__init__()
         self.inference_output_dir = inference_output_dir
         self.tsindex_database_path = tsindex_database_path
+        self.datapath_name_replace=datapath_name_replace
         self.transform = transform
         self.stream_to_tensor_transform = StreamToTensorTransform()
 
@@ -55,7 +57,7 @@ class TSIndexDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict:
         # load client here but not init to avoid multiprocessing issues
-        client = Client(database=str(self.tsindex_database_path))
+        client = Client(database=str(self.tsindex_database_path),datapath_replace=tuple(self.datapath_name_replace) if self.datapath_name_replace else None)
 
         net, sta, start, end = self.all_inference_windows[idx]
         try:

@@ -16,6 +16,7 @@ class TSIndexDataModule(LightningDataModule):
         inference_requirement_path: str,
         inference_output_dir: str,
         tsindex_database_path: str,
+        datapath_name_replace: Optional[list] = None,
         continuous_window_time_in_sec: float = 3600,
         # tranform params
         window_length_in_npts: int = 4800,
@@ -37,6 +38,7 @@ class TSIndexDataModule(LightningDataModule):
                 Path(self.hparams.inference_requirement_path),
                 Path(self.hparams.inference_output_dir),
                 Path(self.hparams.tsindex_database_path),
+                self.hparams.datapath_name_replace,
                 self.hparams.continuous_window_time_in_sec,
                 # we use None here as we will call single inference function, which already has a transform
                 None,
