@@ -139,7 +139,7 @@ dataset
 workplace/
 
 # logs
-logs/
+logs
 
 # models directory
 models/*
