@@ -2,7 +2,7 @@
 tsindex.py: The pytorch dataset for the TSIndex database in obspy. It's mainly used to do model batch inference.
 """
 from pathlib import Path
-from typing import Optional
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -18,14 +18,14 @@ class TSIndexDataset(Dataset):
         inference_requirement_path: Path,
         inference_output_dir: Path,
         tsindex_database_path: Path,
-        datapath_name_replace: Optional[list]=None,
+        datapath_name_replace: Optional[list] = None,
         continuous_window_time_in_sec: float = 3600,
-        transform: Optional[callable] = None,
+        transform: Optional[Callable] = None,
     ) -> None:
         super().__init__()
         self.inference_output_dir = inference_output_dir
         self.tsindex_database_path = tsindex_database_path
-        self.datapath_name_replace=datapath_name_replace
+        self.datapath_name_replace = datapath_name_replace
         self.transform = transform
         self.stream_to_tensor_transform = StreamToTensorTransform()
 
@@ -39,6 +39,7 @@ class TSIndexDataset(Dataset):
         self.all_inference_windows = []
         for _, row in requirement.iterrows():
             time_diff = UTCDateTime(row.end_time) - UTCDateTime(row.start_time)
+            assert type(time_diff) == float
             steps = int(np.ceil(time_diff / continuous_window_time_in_sec))
             for istep in range(steps):
                 start = (
@@ -57,7 +58,12 @@ class TSIndexDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict:
         # load client here but not init to avoid multiprocessing issues
-        client = Client(database=str(self.tsindex_database_path),datapath_replace=tuple(self.datapath_name_replace) if self.datapath_name_replace else None)
+        client = Client(
+            database=str(self.tsindex_database_path),
+            datapath_replace=tuple(self.datapath_name_replace)
+            if self.datapath_name_replace
+            else None,
+        )
 
         net, sta, start, end = self.all_inference_windows[idx]
         try:
@@ -88,6 +94,10 @@ class TSIndexDataset(Dataset):
 
         # convert to tensor
         res = self.stream_to_tensor_transform(st)
+        if res is None:
+            raise Exception(
+                f"Cannot find data for {net}.{sta} from {start} to {end} for RTZ or ENZ or 12Z components"
+            )
         # now res has keys: ids, data, true_start
         res.update(
             {
@@ -109,9 +119,11 @@ class StreamToTensorTransform:
     def __init__(self) -> None:
         pass
 
-    def __call__(self, stream: Stream) -> Optional[torch.tensor]:
+    def __call__(self, stream: Stream) -> Optional[dict]:
         res = {
             "ids": [],
+            "true_start": "",
+            "data": None,
         }
 
         components = ["R", "T", "Z"]

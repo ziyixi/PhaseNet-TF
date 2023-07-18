@@ -1,12 +1,14 @@
 """ 
 batch_inference_step.py: Lightning callback to run predict_step when doing batch inference.
 """
+from typing import List
+
 import torch
 from lightning import LightningModule
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.trainer import Trainer
+
 from src.inference.single_inference import single_inference
-from typing import List
 
 
 class BatchInferenceStepCallback(Callback):

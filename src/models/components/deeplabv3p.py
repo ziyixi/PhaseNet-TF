@@ -17,7 +17,7 @@ class DeepLabV3Plus(smp.DeepLabV3Plus):
             encoder_weights=None,
             encoder_output_stride=16,
             decoder_channels=256,
-            decoder_atrous_rates=[12, 24, 36],
+            decoder_atrous_rates=(12, 24, 36),
             in_channels=6,  # three component real and neg spectrograms
             classes=out_channels,
             upsampling=4,
@@ -28,7 +28,7 @@ class DeepLabV3Plus(smp.DeepLabV3Plus):
 
     def forward(self, x: torch.Tensor):
         result = {}
-        x = F.relu(super().forward(x))
+        x = F.relu(super().forward(x))  # type: ignore
 
         # transpose to have the last axis as freq, as Linear required
         x = x.transpose(-1, -2)

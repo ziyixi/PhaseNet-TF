@@ -53,7 +53,7 @@ def main(cfg: DictConfig) -> None:
     log.info(f"Instantiating model <{cfg.model._target_}>")
     Model = hydra.utils.get_class(cfg.model._target_)
 
-    model: LightningModule = Model.load_from_checkpoint(
+    model: LightningModule = Model.load_from_checkpoint(  # type: ignore
         cfg.ckpt_path, map_location=torch.device("cpu")
     )
 

@@ -6,9 +6,9 @@ from typing import Dict, List
 
 import numpy as np
 from lightning import LightningModule
+from lightning.pytorch.callbacks import BasePredictionWriter
 from lightning.pytorch.trainer import Trainer
 from obspy import Stream, Trace, UTCDateTime
-from lightning.pytorch.callbacks import BasePredictionWriter
 
 
 class InferenceWriter(BasePredictionWriter):
@@ -70,9 +70,9 @@ class InferenceWriter(BasePredictionWriter):
                         arrival_time = true_start + phase_offset
                         if true_start < start:
                             # arrival_pos is measured from the start of the window
-                            arrival_pos = int(
-                                arrival - (start - true_start) * self.sampling_rate
-                            )
+                            time_diff = start - true_start
+                            assert type(time_diff) == float
+                            arrival_pos = int(arrival - time_diff * self.sampling_rate)
                         else:
                             arrival_pos = arrival
 

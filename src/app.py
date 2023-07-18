@@ -62,7 +62,7 @@ def main(cfg: DictConfig) -> None:
     log.info(f"Instantiating model <{cfg.model._target_}>")
     Model = hydra.utils.get_class(cfg.model._target_)
 
-    model = Model.load_from_checkpoint(
+    model = Model.load_from_checkpoint(  # type: ignore
         cfg.ckpt_path, map_location=torch.device(cfg.get("device", "cpu"))
     )
 
@@ -115,7 +115,7 @@ class PredictResponse(BaseModel):
 
 
 @app.post("/predict", response_model=PredictResponse)
-async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
+async def predict(request: PredictionRequest) -> PredictResponse:
     """
     Prediction endpoint.
 
@@ -123,8 +123,9 @@ async def predict(request: PredictionRequest) -> List[Dict[str, List[float]]]:
         request (PredictionRequest): Request body.
 
     Returns:
-        List[Dict[str, List[float]]]: List of predictions, with keys "arrivals", "amps", "arrival_times", and "possibility".
+        PredictResponse: List of predictions, with keys "arrivals", "amps", "arrival_times", and "possibility".
     """
+    assert model is not None, "Model is not loaded yet."
     number_of_traces = len(request.vec)
     res = []
     for itrace in range(number_of_traces):

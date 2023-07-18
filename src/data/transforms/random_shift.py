@@ -21,8 +21,12 @@ class RandomShift:
         # our target final window will be from start_index to end_index
         # randomly shift sample['data'], so that there is at least one arrival in the final window
         shift = torch.randint(
-            sample["start_index"] - last_arrival_index, sample["end_index"] - first_arrival_index, (1,)).item()
-        sample['data'] = torch.roll(sample['data'], shift, dims=1)
+            sample["start_index"] - last_arrival_index,
+            sample["end_index"] - first_arrival_index,
+            (1,),
+        ).item()
+        assert type(shift) is int
+        sample["data"] = torch.roll(sample["data"], shift, dims=1)
         # shift the phase index
-        sample['phase_index'] = [i+shift for i in sample['phase_index']]
+        sample["phase_index"] = [i + shift for i in sample["phase_index"]]
         return sample

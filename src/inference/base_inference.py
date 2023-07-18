@@ -110,9 +110,9 @@ class BatchNormalizeTransform:
         batch_size = x.shape[0]
         for i in range(batch_size):
             data = x[i]
-            mean_vals = torch.mean(data, axis=1, keepdim=True)
+            mean_vals = torch.mean(data, dim=1, keepdim=True)
             data = data - mean_vals
-            max_std_val = torch.max(torch.std(data, axis=1))
+            max_std_val = torch.max(torch.std(data, dim=1))
             if max_std_val == 0:
                 max_std_val = torch.ones(1, device=x.device)
             data = data / max_std_val

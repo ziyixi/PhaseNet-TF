@@ -8,10 +8,11 @@ import numpy as np
 import torch
 from lightning.pytorch import LightningModule, Trainer
 from lightning.pytorch.callbacks import Callback
-from lightning.pytorch.utilities import rank_zero_only
-from matplotlib.pyplot import cm
+from lightning_utilities.core.rank_zero import rank_zero_only
+from matplotlib import cm
 from obspy.core.trace import Trace
 from wandb import Image
+from matplotlib.figure import Figure
 
 
 class VisualizeCallback(Callback):
@@ -24,7 +25,7 @@ class VisualizeCallback(Callback):
         window_length_in_npts: int = 4800,
         freqmin: float = 0.0,
         freqmax: float = 10.0,
-        sgram_threshold: float = 25,
+        sgram_threshold: int = 25,
         plot_waveform_based_on: str = "P",
         if_log_train: bool = True,
         if_log_val: bool = True,
@@ -40,7 +41,7 @@ class VisualizeCallback(Callback):
             window_length_in_npts (int, optional): the length of the input data. Defaults to 4800.
             freqmin (float, optional): the minimum frequency of the wave to plot. Only used when plot_waveform_based_on is P. Defaults to 1.0.
             freqmax (float, optional): the maximum frequency of the wave to plot. Only used when plot_waveform_based_on is P. Defaults to 10.0.
-            sgram_threshold (float, optional): the threshold of the spectrogram. Defaults to 500.
+            sgram_threshold (int, optional): the threshold of the spectrogram. Defaults to 500.
             plot_waveform_based_on (str, optional): the phase to plot the waveform. Defaults to "P" (0.2 to 5 HZ), can also be "all" (no filtering) or "PS" (dynamic based on PS)
             if_log_train (bool, optional): whether to log the training figures. Defaults to True.
             if_log_val (bool, optional): whether to log the validation figures. Defaults to True.
@@ -58,7 +59,7 @@ class VisualizeCallback(Callback):
         self.show_figs = VisualizeInfo(
             phases=phases,
             sampling_rate=int(1 / dt_s),
-            x_range=[0, window_length_in_npts * dt_s],
+            x_range=[0, int(window_length_in_npts * dt_s)],
             freq_range=[freqmin, freqmax],
             global_max=False,
             sgram_threshold=sgram_threshold,
@@ -103,6 +104,7 @@ class VisualizeCallback(Callback):
         if not if_log[stage]:
             return
 
+        assert trainer.max_epochs is not None, "max_epochs is None"
         if (
             (trainer.current_epoch == trainer.max_epochs - 1)
             or (trainer.current_epoch + 1) % self.log_every_n_epoch == 0
@@ -120,9 +122,10 @@ class VisualizeCallback(Callback):
                     last_step = True
 
                 figs = self.show_figs(batch, sgram, predict, peaks, example_this_batch)
-                figs_store[stage].extend(figs)
+                if figs is not None:
+                    figs_store[stage].extend(figs)
                 if last_step:
-                    trainer.logger.experiment.log(
+                    trainer.logger.experiment.log(  # type: ignore
                         {f"figs_{stage}": [Image(item) for item in figs_store[stage]]}
                     )
                     for each in figs_store[stage]:
@@ -137,6 +140,8 @@ class VisualizeCallback(Callback):
         batch: dict,
         batch_idx: int,
     ) -> None:
+        if outputs is None or ("sgram_power" not in outputs):
+            return
         self._log_figs(
             batch,
             batch_idx,
@@ -155,6 +160,8 @@ class VisualizeCallback(Callback):
         batch: dict,
         batch_idx: int,
     ) -> None:
+        if outputs is None or ("sgram_power" not in outputs):
+            return
         self._log_figs(
             batch,
             batch_idx,
@@ -173,6 +180,8 @@ class VisualizeCallback(Callback):
         batch: dict,
         batch_idx: int,
     ) -> None:
+        if outputs is None or ("sgram_power" not in outputs):
+            return
         self._log_figs(
             batch,
             batch_idx,
@@ -190,7 +199,7 @@ class VisualizeInfo:
         phases: List[str],
         sampling_rate: int,
         x_range: List[int],
-        freq_range: List[int],
+        freq_range: List[float],
         global_max: bool = False,
         sgram_threshold: Optional[int] = None,
         plot_waveform_based_on: str = "P",
@@ -201,7 +210,7 @@ class VisualizeInfo:
             phases (List[str]): the phases to plot
             sampling_rate (int): the sampling rate of the data
             x_range (List[int]): the range of the x axis
-            freq_range (List[int]): the range of the frequency axis
+            freq_range (List[float]): the range of the frequency axis
             global_max (bool, optional): whether to use the global max to normalize the sgram. Defaults to False.
             sgram_threshold (Optional[int], optional): the threshold to plot the sgram. Defaults to None.
             plot_waveform_based_on (str, optional): the phase to plot the waveform based on. Defaults to "P".
@@ -226,7 +235,7 @@ class VisualizeInfo:
         predict_batch: torch.Tensor,
         peaks_batch: Dict[str, List[List[List]]],
         cur_example_num: int = 0,
-    ) -> Optional[List[plt.Figure]]:
+    ) -> Optional[List[Figure]]:
         """The function to visualize the results
 
         Args:
@@ -237,7 +246,7 @@ class VisualizeInfo:
             cur_example_num (int, optional): the number of examples to plot. Defaults to 0.
 
         Returns:
-            Optional[List[plt.Figure]]: the figures to plot
+            Optional[List[Figure]]: the figures to plot
         """
         if cur_example_num == 0:
             return None
@@ -282,7 +291,7 @@ class VisualizeInfo:
             # * max threshold
             vmax = []
             if self.sgram_threshold == None:
-                p_arrival = min(arrivals)
+                p_arrival = min(arrivals)  # type: ignore
                 for i in range(3):
                     if self.global_max:
                         i = 0
@@ -423,7 +432,7 @@ class VisualizeInfo:
             axes[4].legend()
 
             # * plot predictions and targets
-            color = cm.rainbow(np.linspace(0, 1, len(self.phases)))
+            color = cm.rainbow(np.linspace(0, 1, len(self.phases)))  # type: ignore
             for i, each_phase in enumerate(self.phases):
                 axes[6].plot(
                     x, label[i + 1, :].numpy(), "--", c=color[i], label=each_phase

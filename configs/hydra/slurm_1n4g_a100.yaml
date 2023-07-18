@@ -2,10 +2,10 @@ defaults:
   - default.yaml
 
 launcher:
-  timeout_min: 239
+  timeout_min: 120
   nodes: 1
   tasks_per_node: 4
-  cpus_per_task: 4
-  mem_gb: 200
+  cpus_per_task: 5
+  mem_gb: 320
   gres: gpu:a100:4
   account: cmse

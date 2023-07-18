@@ -35,21 +35,22 @@ class TSIndexDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None) -> None:
         if not self.dataset:
             self.dataset = TSIndexDataset(
-                Path(self.hparams.inference_requirement_path),
-                Path(self.hparams.inference_output_dir),
-                Path(self.hparams.tsindex_database_path),
-                self.hparams.datapath_name_replace,
-                self.hparams.continuous_window_time_in_sec,
+                Path(self.hparams["inference_requirement_path"]),
+                Path(self.hparams["inference_output_dir"]),
+                Path(self.hparams["tsindex_database_path"]),
+                self.hparams["datapath_name_replace"],
+                self.hparams["continuous_window_time_in_sec"],
                 # we use None here as we will call single inference function, which already has a transform
                 None,
             )
 
     def predict_dataloader(self):
+        assert self.dataset is not None, "Please call setup() first."
         loader = DataLoader(
             self.dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=self.hparams.num_workers,
+            num_workers=self.hparams["num_workers"],
             pin_memory=True,
         )
         return loader

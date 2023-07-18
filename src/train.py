@@ -91,7 +91,7 @@ def train(cfg: DictConfig) -> Tuple[dict, dict]:
 
     if cfg.get("compile"):
         log.info("Compiling model!")
-        model = torch.compile(model)
+        model = torch.compile(model)  # type: ignore
 
     if cfg.get("train"):
         log.info("Starting training!")
@@ -101,7 +101,10 @@ def train(cfg: DictConfig) -> Tuple[dict, dict]:
 
     if cfg.get("test"):
         log.info("Starting testing!")
-        ckpt_path = trainer.checkpoint_callback.best_model_path
+        if trainer.checkpoint_callback is not None:
+            ckpt_path = trainer.checkpoint_callback.best_model_path  # type: ignore
+        else:
+            ckpt_path = ""
         if ckpt_path == "":
             log.warning("Best ckpt not found! Using current weights for testing...")
             ckpt_path = None

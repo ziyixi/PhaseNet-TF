@@ -3,7 +3,7 @@ ai4eps.py: this file contains dataset following standard AI4EPS format.
 Reference: https://ai4eps.github.io/homepage/ml4earth/seismic_event_format1/
 """
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import h5py
 import numpy as np
@@ -11,7 +11,10 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from src import utils
 from src.data.components.utils import generate_label, normalize_waveform, stack_rand
+
+log = utils.get_pylogger(__name__)
 
 
 class Ai4epsDataset(Dataset):
@@ -19,7 +22,7 @@ class Ai4epsDataset(Dataset):
         self,
         data_dir: Path,
         index_to_waveform_id: List[Tuple[str, str]] = [],
-        transform: Optional[callable] = None,
+        transform: Optional[Callable] = None,
         label_shape: str = "gaussian",
         label_width_in_npts: int = 120,
         window_length_in_npts: int = 4800,
@@ -31,7 +34,7 @@ class Ai4epsDataset(Dataset):
         Args:
             data_dir (Path): the directory of the dataset
             index_to_waveform_id (List[Tuple[str, str]], optional): list of tuples, each tuple is (event_id, station_id). Defaults to []. Only the waveforms in the list will be used.
-            transform (Optional[callable], optional): Optional transform to be applied on a sample. Defaults to None.
+            transform (Optional[Callable], optional): Optional transform to be applied on a sample. Defaults to None.
             label_shape (str, optional): the shape of the label, can be "gaussian" or "triangle". Defaults to "gaussian".
             label_width_in_npts (int, optional): the width of the label in number of points. Defaults to 120.
             window_length_in_npts (int, optional): the length of the window in number of points. Defaults to 4800.
@@ -83,14 +86,19 @@ class Ai4epsDataset(Dataset):
         """
         event_id, station_id = self.index_to_waveform_id[idx]
         handler = self.get_handler(event_id)
-        waveform = torch.tensor(handler[event_id][station_id][...], dtype=torch.float32)
-        attrs = handler[event_id][station_id].attrs
+        waveform = torch.tensor(handler[event_id][station_id][...], dtype=torch.float32)  # type: ignore
+        if torch.isnan(waveform).any():
+            waveform[torch.isnan(waveform)] = 0.0
+            log.info(
+                f"waveform contains nan, set to 0.0, event_id: {event_id}, station_id: {station_id}"
+            )
+        attrs = handler[event_id][station_id].attrs  # type: ignore
 
         sample = {
             "key": f"{event_id}_{attrs['network']}.{station_id}",
             "data": waveform,
-            "phase_index": attrs["phase_index"].tolist(),
-            "phase_type": attrs["phase_type"].tolist(),
+            "phase_index": attrs["phase_index"].tolist(),  # type: ignore
+            "phase_type": attrs["phase_type"].tolist(),  # type: ignore
         }
         min_index = min(sample["phase_index"])
         start_index, end_index = (
@@ -192,7 +200,7 @@ def split_train_test_val_for_ai4eps(
             else:
                 unique_pairs_set_other.add((row["event_id"], row["station_id"]))
 
-        phase_picks.apply(get_unique_pairs, axis=1)
+        phase_picks.apply(get_unique_pairs, axis=1)  # type: ignore
         unique_pairs_set_other -= unique_pairs_set
 
         return unique_pairs_set, unique_pairs_set_other
@@ -204,7 +212,7 @@ def split_train_test_val_for_ai4eps(
         rng = np.random.default_rng(seed)
 
         def split_and_combine(
-            pairs: set,
+            pairs: List,
         ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[Tuple[str, str]]]:
             rng.shuffle(pairs)
             train_size = int(len(pairs) * ratio[0])

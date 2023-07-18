@@ -114,7 +114,7 @@ class Up(nn.Module):
         )
         self.decoder = RepeatingConv(2 * f, f, r, ksize)
 
-    def forward(self, x: torch.tensor, skip: torch.tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = self.upconv(x)
         x = torch.cat((x, skip), dim=1)
         return self.decoder(x)
@@ -189,7 +189,7 @@ class UNet(nn.Module):
             in_channels=features, out_channels=out_cha, kernel_size=1
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         # the input is a batch of spectrograms, expected nf=32k, where k is positive
         # bt, ch, nf, nt = x.shape
         # the sgram need to be rotated to nt,nf we can map frequency to size 1

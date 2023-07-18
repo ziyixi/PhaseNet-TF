@@ -1,6 +1,7 @@
 """
 ai4eps_datamodule.py: this file contains the datamodule for the dataset following standard AI4EPS format.
 """
+from pathlib import Path
 from typing import List, Optional
 
 from lightning import LightningDataModule
@@ -9,7 +10,6 @@ from torchvision.transforms import transforms
 
 from src.data.components.ai4eps import Ai4epsDataset, split_train_test_val_for_ai4eps
 from src.data.transforms import RandomReplaceNoise, RandomShift
-from pathlib import Path
 
 
 class Ai4epsDataModule(LightningDataModule):
@@ -22,7 +22,7 @@ class Ai4epsDataModule(LightningDataModule):
         # data dir and split params
         # due to hydra omegaconf limitation, we cannot use Path type here
         data_dir: str = "dataset/",
-        train_val_test_split_ratio: List[int] = [0.90, 0.05, 0.05],
+        train_val_test_split_ratio: List[float] = [0.90, 0.05, 0.05],
         train_val_test_split_seed: int = 3407,
         # dataset params
         noise_replace_ratio: float = 0.0,
@@ -64,65 +64,74 @@ class Ai4epsDataModule(LightningDataModule):
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
             self.data_train = Ai4epsDataset(
-                Path(self.hparams.data_dir),
+                Path(self.hparams["data_dir"]),
                 self.train_ids,
                 self.transforms,
-                self.hparams.label_shape,
-                self.hparams.label_width_in_npts,
-                self.hparams.window_length_in_npts,
-                self.hparams.phases,
-                self.hparams.first_arrival_index_in_final_window_if_no_shift,
-                self.hparams.random_stack_two_waveforms_ratio,
+                self.hparams["label_shape"],
+                self.hparams["label_width_in_npts"],
+                self.hparams["window_length_in_npts"],
+                self.hparams["phases"],
+                self.hparams["first_arrival_index_in_final_window_if_no_shift"],
+                self.hparams["random_stack_two_waveforms_ratio"],
             )
             self.data_val = Ai4epsDataset(
-                Path(self.hparams.data_dir),
+                Path(self.hparams["data_dir"]),
                 self.val_ids,
                 None,
-                self.hparams.label_shape,
-                self.hparams.label_width_in_npts,
-                self.hparams.window_length_in_npts,
-                self.hparams.phases,
-                self.hparams.first_arrival_index_in_final_window_if_no_shift,
+                self.hparams["label_shape"],
+                self.hparams["label_width_in_npts"],
+                self.hparams["window_length_in_npts"],
+                self.hparams["phases"],
+                self.hparams["first_arrival_index_in_final_window_if_no_shift"],
                 0.0,
             )
             self.data_test = Ai4epsDataset(
-                Path(self.hparams.data_dir),
+                Path(self.hparams["data_dir"]),
                 self.test_ids,
                 None,
-                self.hparams.label_shape,
-                self.hparams.label_width_in_npts,
-                self.hparams.window_length_in_npts,
-                self.hparams.phases,
-                self.hparams.first_arrival_index_in_final_window_if_no_shift,
+                self.hparams["label_shape"],
+                self.hparams["label_width_in_npts"],
+                self.hparams["window_length_in_npts"],
+                self.hparams["phases"],
+                self.hparams["first_arrival_index_in_final_window_if_no_shift"],
                 0.0,
             )
 
     def train_dataloader(self):
+        assert (
+            self.data_train is not None
+        ), "self.data_train is None. Please call self.setup() first."
         return DataLoader(
             dataset=self.data_train,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
+            batch_size=self.hparams["batch_size"],
+            num_workers=self.hparams["num_workers"],
+            pin_memory=self.hparams["pin_memory"],
             shuffle=True,
             # persistent_workers=True,
         )
 
     def val_dataloader(self):
+        assert (
+            self.data_val is not None
+        ), "self.data_val is None. Please call self.setup() first."
         return DataLoader(
             dataset=self.data_val,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
+            batch_size=self.hparams["batch_size"],
+            num_workers=self.hparams["num_workers"],
+            pin_memory=self.hparams["pin_memory"],
             shuffle=False,
             # persistent_workers=True,
         )
 
     def test_dataloader(self):
+        assert (
+            self.data_test is not None
+        ), "self.data_test is None. Please call self.setup() first."
         return DataLoader(
             dataset=self.data_test,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
+            batch_size=self.hparams["batch_size"],
+            num_workers=self.hparams["num_workers"],
+            pin_memory=self.hparams["pin_memory"],
             shuffle=False,
             # persistent_workers=True,
         )

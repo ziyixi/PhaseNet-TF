@@ -23,7 +23,7 @@ def extract_peaks(
     sensitive_heights: Dict[str, float],
     sensitive_distances: Dict[str, float],
     sampling_rate: int = 40,
-) -> Dict[str, List[List[List]]]:
+) -> Dict[str, List[List[np.ndarray]]]:
     """Extract peaks from the predicted batch
 
     Args:

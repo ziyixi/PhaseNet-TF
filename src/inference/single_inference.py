@@ -18,7 +18,7 @@ from .base_inference import (
 
 def single_inference(
     model: LightningModule,
-    data: torch.tensor,
+    data: torch.Tensor,
     extract_phases: List[str],
     model_phases: List[str],
     extract_phase_sensitivity: List[float],

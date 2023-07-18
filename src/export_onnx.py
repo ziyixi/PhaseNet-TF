@@ -47,7 +47,7 @@ def main(cfg: DictConfig) -> None:
     log.info(f"Instantiating model <{cfg.model._target_}>")
     Model = hydra.utils.get_class(cfg.model._target_)
 
-    model = Model.load_from_checkpoint(cfg.ckpt_path, map_location=torch.device("cpu"))
+    model = Model.load_from_checkpoint(cfg.ckpt_path, map_location=torch.device("cpu"))  # type: ignore
     input_shape = torch.randn(1, 3, cfg.model.get("window_length_in_npts", 4800))
     onnx_path = cfg.get("onnx_path", None)
     if onnx_path is not None:

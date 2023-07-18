@@ -33,7 +33,7 @@ class GenSgram(nn.Module):
         """
         super().__init__()
         # since Spectrogram has no params, we don't need to set it as no_grad
-        self.spec_layer=features.STFT(
+        self.spec_layer = features.STFT(
             n_fft=n_fft,
             hop_length=hop_length,
             output_format="Complex",

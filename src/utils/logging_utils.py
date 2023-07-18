@@ -1,4 +1,4 @@
-from lightning.pytorch.utilities import rank_zero_only
+from lightning_utilities.core.rank_zero import rank_zero_only
 
 from src.utils import pylogger
 

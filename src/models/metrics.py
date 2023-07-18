@@ -20,6 +20,12 @@ class MetricBase(Metric):
     def update(self, predict_arrivals: List[List[List]], real_arrivals: torch.Tensor):
         # predict_arrivals is the peaks idx from utils.extract_peaks, with the shape (len_batch,len_phases,len_peaks)
         # real_arrivals is the real peaks idx, with the shape (len_batch,len_phases)
+        assert (
+            type(self.tp) == torch.Tensor
+            and type(self.t) == torch.Tensor
+            and type(self.p) == torch.Tensor
+        )
+
         batch_size = len(predict_arrivals)
         for ibatch in range(batch_size):
             real_arrival = real_arrivals[ibatch][self.phase_idx].detach().cpu().item()
@@ -30,6 +36,7 @@ class MetricBase(Metric):
                 if abs(real_arrival - predict_arrival) < self.threshold:
                     matched = 1
                     break
+
             self.tp += matched  # true positive
 
             # note the below line can automatically handle the nan (very small int) case
@@ -42,6 +49,12 @@ class Precision(MetricBase):
         super().__init__(phase_idx, threshold, time_point_length)
 
     def compute(self):
+        assert (
+            type(self.tp) == torch.Tensor
+            and type(self.t) == torch.Tensor
+            and type(self.p) == torch.Tensor
+        )
+
         return self.tp.float() / self.p if self.p != 0 else torch.tensor(0.0)
 
 
@@ -50,6 +63,12 @@ class Recall(MetricBase):
         super().__init__(phase_idx, threshold, time_point_length)
 
     def compute(self):
+        assert (
+            type(self.tp) == torch.Tensor
+            and type(self.t) == torch.Tensor
+            and type(self.p) == torch.Tensor
+        )
+
         return self.tp.float() / self.t if self.t != 0 else torch.tensor(0.0)
 
 
@@ -58,6 +77,12 @@ class F1(MetricBase):
         super().__init__(phase_idx, threshold, time_point_length)
 
     def compute(self):
+        assert (
+            type(self.tp) == torch.Tensor
+            and type(self.t) == torch.Tensor
+            and type(self.p) == torch.Tensor
+        )
+
         precision = self.tp.float() / self.p if self.p != 0 else torch.tensor(0.0)
         recall = self.tp.float() / self.t if self.t != 0 else torch.tensor(0.0)
         return (
