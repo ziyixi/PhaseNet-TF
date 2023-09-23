@@ -6,8 +6,8 @@ launcher:
   nodes: 1
   tasks_per_node: 4
   cpus_per_task: 10
-  mem_gb: 300
-  partition: gpu
+  mem_gb: 360
+  partition: gpu-debug
   account: mit186
   additional_parameters:
     gpus: 4

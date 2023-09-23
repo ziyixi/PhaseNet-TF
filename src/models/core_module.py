@@ -96,6 +96,7 @@ class PhaseNetTFModule(LightningModule):
         if self.hparams.train_with_spectrogram:
             output = self.net(sgram)
         else:
+            x = x.unsqueeze(2)
             output = self.net(x)
         predict = output["predict"]
         return predict, sgram

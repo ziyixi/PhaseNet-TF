@@ -6,7 +6,7 @@ net:
   in_cha: 3
   out_cha: 4
   first_layer_repeating_cnn: 1
-  n_freq: null # not used when calculate_skip_for_encoder is false
+  n_freq: 64 # not used when calculate_skip_for_encoder is false
   ksize_down: [3, 1]
   ksize_up: [3, 1]
   encoder_decoder_depth: 4
@@ -43,3 +43,4 @@ extract_peaks_sensitive_distances_in_seconds: 5.0
 window_length_in_npts: 4800
 dt_s: 0.025
 metrics_true_positive_threshold_s_list: [0.5, 1.0, 1.5]
+train_with_spectrogram: False

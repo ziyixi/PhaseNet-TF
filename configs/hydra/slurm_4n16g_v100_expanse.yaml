@@ -2,7 +2,7 @@ defaults:
   - default.yaml
 
 launcher:
-  timeout_min: 1440
+  timeout_min: 2160
   nodes: 4
   tasks_per_node: 4
   cpus_per_task: 10

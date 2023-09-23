@@ -19,6 +19,6 @@ callbacks:
     save_waveform_stream: False
     save_phase_arrivals: True
   batch_inference_step:
-    extract_phase_sensitivity: [0.1, 0.1]
+    extract_phase_sensitivity: [0.5, 0.5]
 
 ckpt_path: /home/xiziyi/Packages_Research/PhaseNet-TF/models/model.ckpt
