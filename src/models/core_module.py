@@ -25,7 +25,7 @@ class PhaseNetTFModule(LightningModule):
             0.25,
             0.25,
         ],  # with the noise component
-        sgram_generator_config: dict = {
+        sgram_generator_config: dict[str, Union[int, float]] = {
             "n_fft": 256,
             "hop_length": 1,
             "freqmin": 0,
@@ -42,6 +42,7 @@ class PhaseNetTFModule(LightningModule):
         window_length_in_npts: int = 4800,
         dt_s: float = 0.025,
         metrics_true_positive_threshold_s_list: List[float] = [0.3, 0.5, 1.0, 1.5, 2.0],
+        train_with_spectrogram: bool = True,
     ):
         super().__init__()
 
@@ -92,7 +93,10 @@ class PhaseNetTFModule(LightningModule):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         sgram = self.sgram_generator(x)
-        output = self.net(sgram)
+        if self.hparams.train_with_spectrogram:
+            output = self.net(sgram)
+        else:
+            output = self.net(x)
         predict = output["predict"]
         return predict, sgram
 
