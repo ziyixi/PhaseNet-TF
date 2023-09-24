@@ -151,3 +151,5 @@ models/*
 # batch inference requirements
 batch_inference/
 dataset*
+dumps/
+dumps.tar.gz
