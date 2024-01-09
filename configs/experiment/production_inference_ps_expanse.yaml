@@ -1,0 +1,25 @@
+# @package _global_
+
+# dev config for inference, all files are stored in local directory
+defaults:
+  - override /trainer: single_gpu.yaml
+  - override /logger: csv.yaml
+  - override /hydra: inference_1n4g_expanse.yaml
+
+data:
+  inference_requirement_path: /home/xiziyi/Packages_Research/PhaseNet-TF/batch_inference/all_months_fix.csv
+  inference_output_dir: /expanse/lustre/projects/mit186/xiziyi/inference/all_months_ps_new
+  tsindex_database_path: /expanse/lustre/scratch/xiziyi/temp_project/timeseries.sqlite
+
+callbacks:
+  batch_inference_writer:
+    output_dir: /expanse/lustre/projects/mit186/xiziyi/inference/all_months_ps_new
+    save_prediction_stream: False
+    save_waveform_stream: False
+    save_phase_arrivals: True
+    extract_phases: ["P", "S", "PS"]
+  batch_inference_step:
+    extract_phases: ["P", "S", "PS"]
+    extract_phase_sensitivity: [0.5, 0.5, 0.3]
+
+ckpt_path: /home/xiziyi/Packages_Research/PhaseNet-TF/models/model_ps.ckpt
