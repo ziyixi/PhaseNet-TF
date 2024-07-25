@@ -153,4 +153,3 @@ batch_inference/
 dataset*
 dumps/
 dumps.tar.gz
-dumps_false*
