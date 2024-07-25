@@ -128,19 +128,24 @@ func handleInferencePost(c *gin.Context) {
 	}
 	prediction := batchToWaveformTransform(predictionBatched, windpwLength, hopLength)
 
-	// extract peaks for prediction[1] as P wave, prediction[2] as S wave
+	// extract peaks for prediction[1] as P wave, prediction[2] as S wave, prediction[3] as PS
 	// also ignore two peaks within 1s assuming sampling rate is 40
 	peaksP, hieghtsP := findPeaks(prediction[1], postContent.Sensitivity, 40)
 	peaksS, hieghtsS := findPeaks(prediction[2], postContent.Sensitivity, 40)
+	peaksPS, heightsPS := findPeaks(prediction[3], postContent.Sensitivity, 40)
 
 	// with reference to timeStamp, calculate timeP and timeS
 	timeP := make([]time.Time, len(peaksP))
 	timeS := make([]time.Time, len(peaksS))
+	timePS := make([]time.Time, len(peaksPS))
 	for i := range peaksP {
 		timeP[i] = postContent.TimeStamp.Add(time.Duration(peaksP[i]) * time.Second / 40)
 	}
 	for i := range peaksS {
 		timeS[i] = postContent.TimeStamp.Add(time.Duration(peaksS[i]) * time.Second / 40)
+	}
+	for i := range peaksPS {
+		timePS[i] = postContent.TimeStamp.Add(time.Duration(peaksPS[i]) * time.Second / 40)
 	}
 
 	// return result
@@ -155,12 +160,18 @@ func handleInferencePost(c *gin.Context) {
 			"heights": hieghtsS,
 			"times":   timeS,
 		},
+		"PS": gin.H{
+			"peaks":   peaksPS,
+			"heights": heightsPS,
+			"times":   timePS,
+		},
 	}
 
 	ReturnPrediction := gin.H{
 		"noise": prediction[0],
 		"P":     prediction[1],
 		"S":     prediction[2],
+		"PS":    prediction[3],
 	}
 
 	if postContent.ReturnPrediction {
